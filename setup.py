@@ -11,7 +11,7 @@ if __name__ == '__main__':
 	working_directory 	= os.getcwd()
 	samples_directory 	= '/STORE/Hbb/2016_08_VHBBHeppyV21'
 	analysis_name 		= 'Wlv'
-	samples_directory_preselection = '_'.join(samples_directory, 'preselection')
+	samples_directory_preselection = '_'.join([samples_directory,'preselection'])
 	# ----------------------------------------------------
 
 	print '{0:30s}{1}'.format('Analysis name:', analysis_name)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
 		with open(paths) as f:
 			newText=f.read().\
 					replace('string_working_directory', working_directory).\
-					replace('string_samples_directory', samples_directory)
+					replace('string_samples_directory', samples_directory).\
 					replace('string_samples_directory_preselection', samples_directory_preselection)
 
 		with open(paths, "w") as f:
