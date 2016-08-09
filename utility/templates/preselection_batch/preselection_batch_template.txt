@@ -1,0 +1,7 @@
+executable  =  XXX_4.sh
+universe    =  vanilla
+log         =  XXX_4.log
+initialdir  =  XXX_5
+error 		=  XXX_4.error
+getenv = True
+queue
