@@ -9,7 +9,7 @@ if __name__ == '__main__':
 	# ------------ Change only this part -----------------
 	# This will be stored in config files after they are created
 	working_directory 	= os.getcwd()
-	samples_directory 	= '/STORE/Hbb/2016_08_VHBBHeppyV21'
+	samples_directory 	= '/xxx/yyy/zzz..'
 	analysis_name 		= 'Wlv'
 	samples_directory_preselection = '_'.join([samples_directory,'preselection'])
 	# ----------------------------------------------------
