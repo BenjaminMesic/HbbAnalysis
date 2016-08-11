@@ -199,6 +199,7 @@ def trim_trees(cut, subsamples_cut, samples_list, location_of_samples, forceReDo
 			del _input
 			_output.Close()
 			del _output
+			print_nice('status', 'File done.')
 
 		else:
 			print_nice('python_info', 'File exists and it is ok.')

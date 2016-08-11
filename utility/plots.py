@@ -45,9 +45,8 @@ class Plot(object):
 
 	-----------
 	To DO:
-	- add weights, scale factors, lumi
+	- add possibility to add info from extra, e.g. sample scale factor 
 	- last bin (overflow)
-	- subsamples
 
 	- log scale
 	- y axis
@@ -81,18 +80,18 @@ class Plot(object):
 		self.general_options 	= configuration.cfg_files['general']
 
 		# ------ Plot features -----
-		self.cache_trees 		= {}
-		self.histograms 		= {}
-		self.stack_histograms 	= {}
-		self.variables 			= {}
-		self.pads 				= {}
-		self.legends 			= {}
-		self.legends_entries 	= {}
-		self.error_graph 		= {}
-		self.labels 			= {}
-		self.ratio_histograms 	= {}
-		self.ratio_horizontal_line = {}
-		self.canvas 			= {}
+		self.cache_trees 				= {}
+		self.histograms 				= {}
+		self.stack_histograms 			= {}
+		self.variables 					= {}
+		self.pads 						= {}
+		self.legends 					= {}
+		self.legends_entries 			= {}
+		self.error_graph 				= {}
+		self.labels 					= {}
+		self.ratio_histograms 			= {}
+		self.ratio_horizontal_line 		= {}
+		self.canvas 					= {}
 
 		# ------ Cuts -------
 		self.subsamples_cut 	= configuration.cfg_files['cuts']['subsamples_cut']
@@ -107,7 +106,9 @@ class Plot(object):
 		self.samples_plot 		= self.get_samples_for_plot()
 
 		# ------ Weights, scaling -------
-		self.weights 			= configuration.cfg_files['weights']
+		self.weights 					= configuration.cfg_files['weights']
+		self.samples_scale_factors 	= {}
+		self.samples_number_of_entries = {}
 
 		utility.print_nice('analysis_info', 'Working directory:', self.working_directory)
 		utility.print_nice('analysis_info', 'Location of samples:', self.samples_directory)
@@ -115,7 +116,6 @@ class Plot(object):
 		utility.print_nice('analysis_info', 'Plot cut:', self.plot_cut)
 		utility.print_nice('analysis_info_list', 'Plot options:', self.plot_options.values())
 		utility.print_nice('analysis_info_list', 'List of samples:', self.samples_plot.keys())
-
 
 	def get_samples_for_plot(self):
 
@@ -191,6 +191,37 @@ class Plot(object):
 		# Make trees with all cuts applied, if doesnt exist create them and store in cache dir
 		self.cache_trees = utility.trim_trees( self.final_cut, self.subsamples_cut, self.samples_plot, self.samples_directory)
 
+	def get_samples_number_of_entries(self):
+
+		utility.print_nice('python_info', '\nCalled get_samples_number_of_entries function.')
+
+		for _id,_f in self.cache_trees.iteritems():
+					
+			try:
+				_file 	= ROOT.TFile.Open( _f,'read')
+				self.samples_number_of_entries[_id] = _file.Get('Count').GetEntries()
+				utility.print_nice('analysis_info', _id + ' number of entries', _file.Get('Count').GetEntries())
+				_file.Close()
+			except Exception, e:
+				utility.print_nice('error', 'Problem with loading: ' + _f)
+				raise
+
+	def get_samples_scale_factors(self):
+
+		utility.print_nice('python_info', '\nCalled get_samples_scale_factors function.')
+
+		_luminosity	= self.general_options['luminosity']
+
+		for _id,_s in self.samples_plot.iteritems():
+
+			if self.samples_all[_s]['types'] == 'mc':
+				_x_sec	= self.samples_all[_s]['xsec'] 
+				self.samples_scale_factors[_s]= str(_luminosity*_x_sec/self.samples_number_of_entries[_id])
+			else:
+				self.samples_scale_factors[_s] = str(1.0)
+
+			utility.print_nice('analysis_info', _id + ' scale factor:', self.samples_scale_factors[_s])
+
 	def set_and_save_histograms(self):
 
 		utility.print_nice('python_info', '\nCalled set_and_save_histograms function.')
@@ -223,15 +254,21 @@ class Plot(object):
 				else:
 					_weight = '*'.join(self.weights.values())
 
-				_draw_options = '({0})*({1})'.format( "1.0", "1") #weight, cut	
+				# Scale factors part
+				if _sample_type == 'mc':
+					_weight = _weight + '*' + self.samples_scale_factors[_sample_name]
 
+				# ---- Explanation of weight as Draw parameter ----
+				# Selection = "weight *(boolean expression)"
+				# If the Boolean expression evaluates to true,
+				# the histogram is filled with a weight.
+				# If the weight is not explicitly specified it is assumed to be 1.
+					
 				# Get histogram from sample
 				_input = ROOT.TFile.Open( _f,'read')
 				_tree = _input.Get('tree')
 				_histogram = ROOT.TH1D( _name, _name, _nbin, _x_min, _x_max)
 				_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
-				# print dir(_histogram)
-
 
 				if _sample_type == 'data':
 					_histogram.SetMarkerStyle(20)
@@ -273,6 +310,10 @@ class Plot(object):
 		while _key:
 			self.histograms[_key.GetName()] = _file.Get(_key.GetName())
 			_key = iter.Next()
+
+
+
+		self.samples_scale_factors
 
 	def get_variables(self):
 
@@ -538,7 +579,6 @@ class Plot(object):
 
 			self.canvas[_v].SaveAs( os.path.join(self.plot_directory, self.plot_name + '_' + _v + '_.pdf'))
 
-
 	@staticmethod
 	def myText(txt="CMS Preliminary",ndcX=0,ndcY=0,size=0.8):
 		ROOT.gPad.Update()
@@ -548,3 +588,29 @@ class Plot(object):
 		text.SetTextSize(text.GetTextSize()*size)
 		text.DrawLatex(ndcX,ndcY,txt)
 		return text
+
+class ClassicalPlots(object):
+	'''
+	-----------
+	Description:
+
+	-----------	
+	Input files:
+
+	-----------
+	Parameters:
+
+	-----------
+	Functions:
+
+	-----------
+	Useful commands:
+
+
+	-----------
+	To DO:
+
+	'''	
+	def __init__(self):
+		utility.print_nice('python_info', '\nCreated instance of ClassicalPlots')
+		
