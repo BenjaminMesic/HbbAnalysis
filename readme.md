@@ -13,5 +13,4 @@ Instructions:
 	analysis_name 		= 'Wlv'  
 7. python setup.py 
 
-6. If DAS needed:  
-	voms-proxy-init --voms cms --valid 168:00
+- If DAS needed: voms-proxy-init --voms cms --valid 168:00
