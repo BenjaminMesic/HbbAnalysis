@@ -40,12 +40,12 @@ class Preselection(object):
 
 	def __init__(self, analysis_name, configuration, force_all):
 
-		print '\n','-'*50, '\nCreated instance of Preselection class\n', '-'*50
+		utility.print_nice('python_info', '\nCreated instance of Preselection class')
 
 		# force preselection on already existing files
 		self.force_all = force_all
 
-		# Set all paths
+		# ------ Paths -------
 		self.working_directory 		= configuration.cfg_files['paths']['working_directory']
 		self.samples_path 			= os.path.join( self.working_directory, 'results', analysis_name, '_step_1_logical_file_names')
 		self.batch_templates_path 	= os.path.join( self.working_directory, 'utility', 'templates', 'preselection_batch')
@@ -55,22 +55,23 @@ class Preselection(object):
 		except Exception, e:
 			self.location_of_preselected_samples = configuration.cfg_files['paths']['samples_directory'] + '_preselection'
 
-		# Preselection cut
+		# ------ Samples -------
+		self.list_of_samples = filter(lambda x: 'missing' not in x and '.txt' in x , os.listdir(self.samples_path))
+
+		# ------ Cuts -------
 		self.preselection_cut = configuration.cfg_files['cuts']['preselection_cut']
 
-		print '\n{0:30s}{1}'.format('Working directory:' , self.working_directory)
-		print '{0:30s}{1}'.format('Path to list of samples:' , self.samples_path)
-		print '{0:30s}{1}'.format('Path to batch templates:' , self.batch_templates_path)
-		print '{0:30s}{1}'.format('Path to batch scripts:' , self.batch_path)
 
-		print '\n{0:30s}{1}'.format('Preselection cut:' , self.preselection_cut)
+		utility.print_nice('analysis_info', 'Working directory:', self.working_directory)
+		utility.print_nice('analysis_info', 'Path to list of samples:', self.samples_path)
+		utility.print_nice('analysis_info', 'Path to batch templates:', self.batch_templates_path)
+		utility.print_nice('analysis_info', 'Path to batch scripts:', self.batch_path)
+		utility.print_nice('analysis_info', '\nPreselection cut:', self.preselection_cut)
 
-		# Get list of samples
-		self.list_of_samples = filter(lambda x: 'missing' not in x and '.txt' in x , os.listdir(self.samples_path))
 
 	def preselection(self):
 
-		print '\n','-'*50, '\nStarting preselection.'
+		utility.print_nice('python_info', '\nCalled preselection function.')
 
 		# Check if batch dir exist, if not create one
 		utility.make_directory(self.batch_path)
@@ -78,7 +79,7 @@ class Preselection(object):
 		# Loop over samples
 		for _sample in self.list_of_samples:
 
-			print '\n', _sample
+			utility.print_nice('status', '\n' + _sample)
 
 			_files = open(os.path.join(self.samples_path, _sample),'r').read().split('\n')
 
@@ -100,9 +101,10 @@ class Preselection(object):
 
 				# If preselected file already exists skip
 				if utility.file_exists(XXX_2) and not self.force_all:
+					utility.print_nice('python_info','File {0} already exists.'.format(XXX_2))
 					continue
 
-				print XXX_2
+				utility.print_nice('status', XXX_2)
 
 				# Check if output dir for preselected files exist, if not create one
 				utility.make_directory(_output_dir)
@@ -134,7 +136,7 @@ class Preselection(object):
 					# Send jobs
 					if 'sh' in _template:
 
-						print _i
+						utility.print_nice('status', _i)
 
 						# if _i > 5:
 						# 	continue
@@ -145,18 +147,18 @@ class Preselection(object):
 						os.chmod(_newdata_name, os.stat(_newdata_name).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 						_working_dir = os.getcwd()
 						os.chdir(XXX_5)
-						print sp.check_output('pwd', shell=True)
+						# print sp.check_output('pwd', shell=True)
 						sp.call('condor_submit ' + XXX_4 + '.txt', shell=True)			
 						os.chdir(_working_dir)
 
 	def merge(self):
 
-		print '\n','-'*50, '\nStarting merging.'
+		utility.print_nice('python_info', '\nCalled merge function.')
 
 		# Loop over samples
 		for _sample in self.list_of_samples:
 
-			print '\n',_sample
+			utility.print_nice('status', '\nMerging preselected files for:' + _sample)
 
 			_files = open(os.path.join(self.samples_path, _sample),'r').read().split('\n')
 
@@ -165,8 +167,9 @@ class Preselection(object):
 			# name of merged root file
 			_merge_file_name = os.path.join(self.location_of_preselected_samples, _files_split[4] + '.root')
 
-			# If preselected file already exists skip
+			# If merged preselected file already exists skip
 			if utility.file_exists(_merge_file_name) and not self.force_all:
+				utility.print_nice('python_info','File {0} already exists.'.format(_merge_file_name))
 				continue
 
 			_merger = ROOT.TFileMerger(ROOT.kFALSE)
@@ -174,7 +177,7 @@ class Preselection(object):
 
 			for _i,_file in enumerate(_files):
 
-				print _file
+				utility.print_nice('status', _file)
 
 				# if i != 0:
 				# 	continue
@@ -193,4 +196,4 @@ class Preselection(object):
 				
 			_merger.Merge()
 
-			print 'Merging done:', _merge_file_name	
+			utility.print_nice('status', '\nMerging done.')

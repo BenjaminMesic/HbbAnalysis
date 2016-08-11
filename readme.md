@@ -11,4 +11,7 @@ Instructions:
 6. In setup.py set path for samples and analysis name  
 	samples_directory 	= '/STORE/Hbb/2016_08_VHBBHeppyV21'  
 	analysis_name 		= 'Wlv'  
-7. python setup.py  
+7. python setup.py 
+
+6. If DAS needed:  
+	voms-proxy-init --voms cms --valid 168:00

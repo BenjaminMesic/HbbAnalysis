@@ -3,7 +3,7 @@ from utility import utility, preselection
 
 if __name__ == '__main__':
 
-	print '\n','-'*50, '\nStep 2: preselection.\n', '-'*50
+	utility.print_nice('python_info',  '\nStep 2: preselection.')
 
 	# Get analysis name, default is 'Wlv'
 	analysis_name = utility.analysis_name()
@@ -17,5 +17,5 @@ if __name__ == '__main__':
 	# Preselection
 	p.preselection()
 
-	# Merge files
-	p.merge()
+	# # Merge files
+	# p.merge()

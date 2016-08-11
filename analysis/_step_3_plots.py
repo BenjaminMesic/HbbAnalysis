@@ -2,7 +2,7 @@ from utility import utility, plots
 
 if __name__ == '__main__':
 
-	print '\n','-'*50, '\nStep 3: plots.\n', '-'*50
+	utility.print_nice('python_info',  'Step 3: plots.')
 
 	# Get analysis name, default is 'Wlv'
 	analysis_name = utility.analysis_name()
@@ -24,3 +24,4 @@ if __name__ == '__main__':
 	p.get_histograms()
 
 	p.plot()
+

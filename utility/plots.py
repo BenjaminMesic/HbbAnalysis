@@ -57,7 +57,7 @@ class Plot(object):
 	
 	def __init__(self, analysis_name, plot_name, configuration, subsamples = False):
 
-		print '\n','-'*50, '\nCreated instance of Plot class\n', '-'*50
+		utility.print_nice('python_info', '\nCreated instance of Plot class')
 
 		# Load plot style, defined in tdrStyle.py
 		tdrStyle.tdrStyle()
@@ -109,18 +109,17 @@ class Plot(object):
 		# ------ Weights, scaling -------
 		self.weights 			= configuration.cfg_files['weights']
 
-		print '\n{0:30s}{1}'.format('Working directory:' , self.working_directory)
-		print '{0:30s}{1}'.format('Location of samples:' , self.samples_directory)	
-		print '{0:30s}{1}'.format('Blinding cut:' , self.blinding_cut)	
-		print '{0:30s}{1}'.format('Plot cut:' , self.plot_cut)
-		print '\nPlot options:'
-		for _po in self.plot_options:
-			print '{0:30s}{1}: {2}'.format('' , _po, self.plot_options[_po])
-		print '\nList of samples:'
-		for _id,_s in self.samples_plot.iteritems():
-			print '{0:30s}{1:30s}{2}'.format('' , 'id: ' + _id, 'Sample: ' + _s)
+		utility.print_nice('analysis_info', 'Working directory:', self.working_directory)
+		utility.print_nice('analysis_info', 'Location of samples:', self.samples_directory)
+		utility.print_nice('analysis_info', '\nBlinding cut:', self.blinding_cut)
+		utility.print_nice('analysis_info', 'Plot cut:', self.plot_cut)
+		utility.print_nice('analysis_info_list', 'Plot options:', self.plot_options.values())
+		utility.print_nice('analysis_info_list', 'List of samples:', self.samples_plot.keys())
+
 
 	def get_samples_for_plot(self):
+
+		utility.print_nice('python_info', '\nCalled get_samples_for_plot function.')
 		
 		_samples = {}
 		# if true include all samples in config file
@@ -194,7 +193,7 @@ class Plot(object):
 
 	def set_and_save_histograms(self):
 
-		print '\n','-'*10,'\nCalled set_and_save_histograms function.'
+		utility.print_nice('python_info', '\nCalled set_and_save_histograms function.')
 
 		# Histograms will be saved in new root file
 		_output_name = os.path.join(self.plot_directory, self.plot_name + '.root')
@@ -242,9 +241,6 @@ class Plot(object):
 					_histogram.SetLineColor(self.plot_definitions['colors'][_id])
 
 
-
-				# Histogram weights
-
 				# c = ROOT.TCanvas('c', 'c', 800, 800)
 				# _histogram.Draw('p')
 				# _histogram.SetTitle(_name)
@@ -259,13 +255,15 @@ class Plot(object):
 
 	def get_histograms(self):
 
+		utility.print_nice('python_info', '\nCalled get_histograms function.')
+
 		# Get all histograms from _input_name and store them in dictionary		
 		try:
 			_input 	= os.path.join(self.plot_directory, self.plot_name + '.root')
 			_file 	= ROOT.TFile.Open( _input,'read')
 
 		except Exception, e:
-			print 'Problem with loading: ', file_name
+			utility.print_nice('error', 'Problem with loading: ' + file_name)
 			raise
 
 		_dirlist = _file.GetListOfKeys()
@@ -278,10 +276,14 @@ class Plot(object):
 
 	def get_variables(self):
 
+		utility.print_nice('python_info', '\nCalled get_variables function.')
+
 		# Get all plot _variables
 		self.variables = self.plot_options['variables']	
 
 	def set_stack_histograms(self, variable):
+
+		utility.print_nice('python_info', '\nCalled set_stack_histograms function.')
 
 		self.pads['stack_pad'].cd()
 
@@ -359,6 +361,8 @@ class Plot(object):
 
 	def set_ratio_histograms(self, variable):
 
+		utility.print_nice('python_info', '\nCalled set_ratio_histograms function.')
+
 		# Histogram plot options
 		_nbin 	= self.plot_options['variables'][variable]['n_bin']
 		_x_min 	= self.plot_options['variables'][variable]['x_min']
@@ -398,6 +402,8 @@ class Plot(object):
 		self.ratio_horizontal_line['ratio_line'].Draw()
 
 	def set_legends(self, variable):
+
+		utility.print_nice('python_info', '\nCalled set_legends function.')
 
 		_legend_dictionary = self.plot_definitions['legend']
 
@@ -445,6 +451,8 @@ class Plot(object):
 
 	def set_error_graphs(self, variable):
 
+		utility.print_nice('python_info', '\nCalled set_error_graphs function.')
+
 		# There are two plots: histogram and ratio. Each one needs its error graph		
 		_stack_name = variable + '-mc-stack'
 		_stack_mc = self.stack_histograms[_stack_name].GetStack().Last().Clone()
@@ -458,6 +466,8 @@ class Plot(object):
 		
 	def set_pads(self):
 		
+		utility.print_nice('python_info', '\nCalled set_pads function.')
+
 		# There are two plots: histogram and ratio. Each one needs its Pad
 
 		# Pad with stack (pad_upper)
@@ -479,6 +489,8 @@ class Plot(object):
 
 	def set_labels(self):
 
+		utility.print_nice('python_info', '\nCalled set_labels function.')
+
 		# Labels for stack pad
 		self.pads['stack_pad'].cd()
 
@@ -490,12 +502,16 @@ class Plot(object):
 
 	def set_canvas(self,v):
 
+		utility.print_nice('python_info', '\nCalled set_canvas function.')
+
 		self.canvas[v] = ROOT.TCanvas(v, v, 600, 600)
 		self.canvas[v].SetFillStyle(4000)
 		self.canvas[v].SetFrameFillStyle(1000)
 		self.canvas[v].SetFrameFillColor(0)		
 
 	def plot(self):
+
+		utility.print_nice('python_info', '\nCalled plot function.')
 		
 		for _v in self.variables:
 
