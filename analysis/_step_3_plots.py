@@ -17,9 +17,10 @@ if __name__ == '__main__':
 
 	p = plots.Plot(analysis_name, plot_name, configuration, sub_samples)
 	p.get_variables()
-
 	p.get_samples_for_plot()
 	p.get_trees()
+	p.get_samples_number_of_entries()
+	p.get_samples_scale_factors()
 	p.set_and_save_histograms()
 	p.get_histograms()
 

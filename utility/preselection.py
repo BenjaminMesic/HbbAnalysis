@@ -27,6 +27,13 @@ class Preselection(object):
 
 	-----------
 	Functions:
+	preselection() - get list of files from _step_1_logical_file_names
+					directory. If you want to add other samples start 
+					first add them in config file samples.ini and then
+					start _step_1 script which creates file with logical
+					file names. preselection() doesnt need samples.ini
+
+
 
 	-----------
 	Useful commands:
