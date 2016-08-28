@@ -48,9 +48,9 @@ if __name__ == '__main__':
 
 		with open(paths) as f:
 			newText=f.read().\
-					replace('string_working_directory', working_directory).\
-					replace('string_samples_directory', samples_directory).\
-					replace('string_samples_directory_preselection', samples_directory_preselection)
+					replace('<working_directory>', working_directory).\
+					replace('<samples_directory>', samples_directory).\
+					replace('<samples_directory_preselection>', samples_directory_preselection)
 
 		with open(paths, "w") as f:
 			f.write(newText)
