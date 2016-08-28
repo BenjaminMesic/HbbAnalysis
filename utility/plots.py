@@ -127,6 +127,7 @@ class Plot(object):
 		# if self.subsamples set True split samples on subsamples
 		_include_subsamples = self.subsamples
 
+		# Check if samples should be split
 		if _include_subsamples:
 
 			if _include_all_samples:
@@ -412,13 +413,25 @@ class Plot(object):
 		# ------ Draw Ratio ------- 
 		self.pads['ratio_pad'].cd()
 
-		_ratio_histogram = self.ratio_histograms[variable + '-data-ratio'].GetStack().Last()
-		_mc_histogram = self.ratio_histograms[variable + '-mc-ratio'].GetStack().Last()
 
-		_ratio_histogram.Divide(_mc_histogram)
+		if variable + '-data-ratio' in self.ratio_histograms.keys() and variable + '-mc-ratio' in self.ratio_histograms.keys():
+
+			_ratio_histogram = self.ratio_histograms[variable + '-data-ratio'].GetStack().Last()
+			_mc_histogram = self.ratio_histograms[variable + '-mc-ratio'].GetStack().Last()
+
+			_ratio_histogram.Divide(_mc_histogram)
+
+
+		else:
+			utility.print_nice('status', 'Not able to plot Ratio, Data or MC sample is missing.')
+
+			for _type in self.ratio_histograms.keys():
+				_ratio_histogram = self.ratio_histograms[_type].GetStack().Last()
+				_ratio_histogram.Divide(_ratio_histogram)
+				_ratio_histogram.SetMarkerSize(0.01)
+
 		_ratio_histogram.Draw('p')
 
-		
 		_ratio_histogram.SetMaximum(1.5)
 		_ratio_histogram.SetMinimum(0.5)
 		_ratio_histogram.GetYaxis().SetNdivisions(5)
@@ -433,7 +446,6 @@ class Plot(object):
 		_ratio_histogram.GetXaxis().SetTitleSize(ROOT.gStyle.GetTitleSize()*2.2)
 		_ratio_histogram.GetXaxis().SetLabelSize(ROOT.gStyle.GetLabelSize() * 2.2)
 
-
 		# _ratio_histogram.CenterTitle(ROOT.kTRUE)
 
 		# Add one horizontal line
@@ -441,6 +453,7 @@ class Plot(object):
 		self.ratio_horizontal_line['ratio_line'].SetLineStyle(ROOT.kSolid)
 		self.ratio_horizontal_line['ratio_line'].SetLineColor(ROOT.kBlack)
 		self.ratio_horizontal_line['ratio_line'].Draw()
+
 
 	def set_legends(self, variable):
 
@@ -483,27 +496,34 @@ class Plot(object):
 				self.legends['stack_legend'].AddEntry( self.histograms[variable + '-' + _id], _l, 'p')
 			else:
 				self.legends['stack_legend'].AddEntry( self.histograms[variable + '-' + _id], _l, 'f')
-	
-		# Add error graph
-		self.legends['stack_legend'].AddEntry(self.error_graph['stack_error'],"MC uncert. (stat.)","fl")
 
-
+		# if there is MC sample add
+		if variable + '-mc-ratio' in self.ratio_histograms.keys():	
+			# Add error graph
+			self.legends['stack_legend'].AddEntry(self.error_graph['stack_error'],"MC uncert. (stat.)","fl")
+		else:
+			utility.print_nice('status', 'Not able to add errors, MC sample is missing.')
 		# ------ Lower pad: Ratio Histogram -------
 
 	def set_error_graphs(self, variable):
 
 		utility.print_nice('python_info', '\nCalled set_error_graphs function.')
 
-		# There are two plots: histogram and ratio. Each one needs its error graph		
-		_stack_name = variable + '-mc-stack'
-		_stack_mc = self.stack_histograms[_stack_name].GetStack().Last().Clone()
+		if variable + '-mc-ratio' in self.ratio_histograms.keys():
 
-		self.pads['stack_pad'].cd()
-		# Error graph for stack	
-		self.error_graph['stack_error'] = ROOT.TGraphErrors(_stack_mc)
-		self.error_graph['stack_error'].SetFillColor(ROOT.kGray+3)
-		self.error_graph['stack_error'].SetFillStyle(3013)
-		self.error_graph['stack_error'].Draw('SAME2')
+			# There are two plots: histogram and ratio. Each one needs its error graph		
+			_stack_name = variable + '-mc-stack'
+			_stack_mc = self.stack_histograms[_stack_name].GetStack().Last().Clone()
+
+			self.pads['stack_pad'].cd()
+			# Error graph for stack	
+			self.error_graph['stack_error'] = ROOT.TGraphErrors(_stack_mc)
+			self.error_graph['stack_error'].SetFillColor(ROOT.kGray+3)
+			self.error_graph['stack_error'].SetFillStyle(3013)
+			self.error_graph['stack_error'].Draw('SAME2')
+
+		else:
+			utility.print_nice('status', 'Not able to add errors, MC sample is missing.')	
 		
 	def set_pads(self):
 		

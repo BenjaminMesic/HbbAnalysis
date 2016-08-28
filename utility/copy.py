@@ -7,12 +7,9 @@ class CopySamples(object):
 	'''
 	-----------
 	Description:
-	Get the logical file names (EOS,PISA,...) for samples 
-	which are defined in config/samples.ini and copy them 
-	to the locations which are defined in config/../paths.ini.
 	
 	----------- 
-	Input files:    samples.ini, paths.ini
+	Input files:    samples.ini, paths.ini, general.ini
 
 	-----------
 	Parameters:
@@ -20,19 +17,19 @@ class CopySamples(object):
 	-----------
 	Functions:
 
-	get_list_of_logical_file_names()    - as the name says, it
-	gets list of all LFNs for each sample using das_query and 
-	save them in directory results/_step_1_logical_file_names/location/sample.txt
-
-	copy_files() 
 
 	-----------
 	Useful commands:
-
+	lcg-ls -b -v -l -D srmv2 srm:"//stormfe1.pi.infn.it:8444/srm/managerv2?SFN=/cms/store/user/cvernier/VHBBHeppyV23" 
+	
+	gfal-ls -Hl srm://t3se01.psi.ch/pnfs/psi.ch/cms/trivcat/store/user/perrozzi/VHBBHeppyV23/
+	gfal-ls -Hl srm://stormfe1.pi.infn.it/cms/store/user/cvernier/VHBBHeppyV23/
+	gfal-copy --force srm://t3se01.psi.ch/pnfs/psi.ch/cms/trivcat/store/user/perrozzi/VHBBHeppyV23/ZZ_TuneCUETP8M1_13TeV-pythia8/VHBB_HEPPY_V23_ZZ_TuneCUETP8M1_13TeV-Py8__spr16MAv2-puspr16_80r2as_2016_MAv2_v0-v1/160718_082331/0000/tree_1.root file:////$PWD/
+	gfal-copy --force srm://t3se01.psi.ch/pnfs/psi.ch/cms/trivcat/store/user/perrozzi/VHBBHeppyV23/QCD_HT100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8 file:////$PWD/
 
 	-----------
 	To DO:
-	Big problem with das_client.py. Slow execution.
+	forceredo, overwriting,
 
 	''' 
 	def __init__(self, analysis_name, configuration, force_all):
@@ -48,13 +45,11 @@ class CopySamples(object):
 		self.working_directory  = configuration.cfg_files['paths']['working_directory']
 		self.logical_file_names = os.path.join( *[self.working_directory,'results', analysis_name, '_step_1_logical_file_names'])
 
-		# ------ DAS options -------
-		self.locations      = {'PSI':'perrozzi-VHBB_HEPPY_V21bis*', 'PISA':'arizzi-VHBB_HEPPY_V21*' }
-		self.data_tier      = 'USER'
-		self.dbs_instance   = 'prod/phys03'
-		self.pisa_redirector= 'xrootd-cms.infn.it'
-		self.psi_redirector = 't3se01.psi.ch'
-		self.PEM_pass_phrase = ''
+		# ------ Copy options -------
+		self.storage_element 	= configuration.cfg_files['general']['storage_element']
+		self.locations 			= configuration.cfg_files['general']['locations']
+		self.list_of_all_samples_from_sources = {}
+		self.search_keywords	= ['.root']
 
 
 		utility.print_nice('analysis_info', 'Analysis name:', analysis_name)
@@ -62,200 +57,260 @@ class CopySamples(object):
 		utility.print_nice('analysis_info', 'Working_directory:', self.working_directory)
 		utility.print_nice('analysis_info_list', 'List of samples:', self.list_of_samples.keys())
 
-	def get_list_of_logical_file_names(self):
+		# Get the list of all the samples from source
+		self.get_list_of_all_samples_from_sources()
 
-		utility.print_nice('python_info', '\nCalled get_list_of_logical_file_names function.')
-		utility.print_nice('status', 'Collecting logical file names for all the samples.')
+	def wrapper_gfal_ls(self, location):
 
-		# Loop over all locations
-		for _location in self.locations:
+		utility.print_nice('python_info', '\nCalled wrapper_gfal_ls function.')
 
-			utility.print_nice('status', '\nGetting informations from {0} ...'.format(_location))
+		_command = ['gfal-ls'] #,'-Hl']
+		_command.append('srm:/' + location)
 
-			# Loop over samples
-			for _sample in self.list_of_samples:
+		utility.print_nice('python_info', 'Command: ' + ' '.join(_command))
 
-				utility.print_nice('status', 'For sample: {0}'.format(_sample))
+		return sp.check_output(_command)
 
-				# Create the output directory for particular location if it doesn't exist
-				_outdir = os.path.join( self.logical_file_names, _location)
-				utility.make_directory(_outdir)
+	def wrapper_gfal_ls_r(self, location):
+		
+		utility.print_nice('python_info', '\nCalled wrapper_gfal_ls_r function.')
 
-				# sample txt file to store LFNs
-				_outpath = os.path.join(_outdir, _sample + '.txt')
-				# If txt file already exists skip
-				if os.path.isfile(_outpath) and not self.force_all:
-					utility.print_nice('python_info','File {0} already exists.'.format(_outpath))
-					continue
+		_paths = Queue()
+		_paths.enqueue(location)
 
-				# Query DAS to find the dataset(s).
-				_datasets = self.das_find_datasets(_sample, self.locations[_location], self.data_tier, self.dbs_instance)
+		# list to store logical file names
+		_logical_file_names = []
 
-				# Query DAS to find files for datasets
-				_logical_file_names = self.das_find_files(_datasets, self.data_tier, self.dbs_instance)
+		while not _paths.isEmpty():
 
-				if not _logical_file_names:
-					utility.print_nice('error', 'No files were found for "{}".\n'.format(_sample))
-					continue
+			# get one path
+			_x = _paths.dequeue()
 
-				# If the file does not exist, create it and write the LFNs.
+			# do ls
+			_y = self.wrapper_gfal_ls( _x )
+
+			# maybe problematic part
+			if _x in _y:
+
+				# if ls gets you the same result as input you are done
+				_logical_file_names.append(_x)
+
+			else:
+				# go deeper in the folder
+				for _p in _y.splitlines():
+					_paths.enqueue( os.path.join(_x, _p))
+
+
+		return _logical_file_names
+
+	def wrapper_gfal_cp_file(self, source, destination):
+	
+		utility.print_nice('python_info', '\nCalled wrapper_gfal_cp_file function.')
+
+		_command = ['gfal-copy', '--force']
+		_command.append('srm:/' + source)
+		_command.append('file:///' + destination)
+
+		utility.print_nice('python_info', 'Command: ' + ' '.join(_command))
+
+		sp.call(_command)
+
+
+	def get_list_of_all_samples_from_sources(self):
+
+		utility.print_nice('python_info', '\nCalled get_list_of_all_samples_from_sources function.')
+
+		for _l in self.locations:
+			_path = os.path.join( self.storage_element[_l], self.locations[_l])
+			
+			for _s in self.wrapper_gfal_ls( _path ).splitlines():
+				self.list_of_all_samples_from_sources[_s] = _l
+
+	def save_logical_file_names_source(self, sample):
+		
+		if sample in self.list_of_all_samples_from_sources:
+
+			_loc = self.list_of_all_samples_from_sources[sample]
+			utility.print_nice('status', 'Sample {0} exists in {1}.'.format(sample, _loc))	
+
+			# sample txt file to store LFNs
+			_outpath = os.path.join(self.logical_file_names, sample + '.txt')
+			
+			# If txt file already exists skip
+			if os.path.isfile(_outpath) and not self.force_all:
+				utility.print_nice('python_info','File {0} already exists.'.format(_outpath))
+			
+			else:
+				_path = os.path.join(self.storage_element[_loc], self.locations[_loc], sample)
+				_logical_file_names = self.wrapper_gfal_ls_r(_path)
 				with open(_outpath, 'w') as _outfile:
-					for _LFN in _logical_file_names:
-						_outfile.write(_LFN + '\n')
+					for _lfn in _logical_file_names:
+						_outfile.write(_lfn + '\n')
 				utility.print_nice('status', 'The LFNs were written to "{}".'.format(_outpath))
 
-	def copy_files(self):
+		else:
+			utility.print_nice('error', _s + ' is missing!')
 
-		utility.print_nice('python_info', '\nCalled copy_files function.')
+	def save_logical_file_names_all_samples_from_config_source(self):
+
+		utility.print_nice('python_info', '\nCalled save_logical_files_names_all_samples_from_config function.')
+
+		# Create the output directory if it doesn't exist
+		utility.make_directory(self.logical_file_names)
+
+		# Loop over all samples
+		for _s in self.list_of_samples:
+
+			self.save_logical_file_names_source(_s)
+
+
+	def save_logical_file_names_from_config_destination(self, sample):
+
+		utility.print_nice('python_info', '\nCalled save_logical_file_names_from_config_destination function.')
+		utility.print_nice('status', 'Getting local lfns for sample {0}'.format(sample))
+
+		_source_file 		= open(os.path.join(self.logical_file_names, sample + '.txt'),'r')
+		_destination_file 	= open(os.path.join(self.logical_file_names, sample + '_local.txt'), 'w')
+		_missing_file 		= open(os.path.join(self.logical_file_names, sample + '_missing.txt'), 'w') 
+
+		_loc = self.list_of_all_samples_from_sources[sample]
+		_path_to_be_replaced = os.path.join( self.storage_element[_loc], self.locations[_loc])
+		_path_to_be_replaced_with = self.output_directory
+
+		for _f in _source_file:
+
+			if not self.filter( _f):
+				continue
+
+			# Create destination path for each file
+			_lfn_destination = _f.strip().replace(_path_to_be_replaced, _path_to_be_replaced_with)
+
+			if os.path.isfile(_lfn_destination):
+				_destination_file.write(_lfn_destination + '\n')
+			else:
+				_missing_file.write(_lfn_destination + '\n')
+
+		_source_file.close()
+		_destination_file.close()
+		_missing_file.close()
+
+	def save_logical_file_names_all_samples_from_config_destination(self):
+
+		utility.print_nice('python_info', '\nCalled save_logical_file_names_all_samples_from_config_destination function.')
 		
 		# Loop over all samples
-		for _sample in self.list_of_samples:
-
-			utility.print_nice('status', '\nCopying files for {0} sample.'.format(_sample))
-
-			# Open the same files for all locations and make list of their files
-			_comparison_LFNs = CopySamples.compare_files_in_same_location( _sample, self.locations, self.logical_file_names)
-
-			# Create unique list
-			_unique_LFNs = CopySamples.make_unique_list_of_files(_comparison_LFNs, self.locations)
-
-			# _unique list is numbered list of all files for each sample
-			# this way we can see if something is missing
-			_unique_list = list(_unique_LFNs.keys())
-			_unique_list.sort()
-
-			# Check if any file is missing
-			CopySamples.missing_files(_unique_list, _sample, self.logical_file_names )
+		for _s in self.list_of_samples:
 			
-			# Start copying 
-			for _file in _unique_LFNs.values():
+			self.save_logical_file_names_from_config_destination(_s)
 
-				_in         = os.path.join( self.output_directory, '/'.join(_file.split('/')[5:-1]))
-				_out        = ''
-				_file_name  = os.path.join( self.output_directory, '/'.join( _file.split('/')[5:]))
 
-				utility.make_directory(_in)
+	def copy_files_single_sample(self, sample):
 
-				if 'perrozzi' in _file:
-					_out = 'root://192.33.123.24:1094/' + _file
-					
-				elif 'arizzi' in _file:
-					_out = 'root://xrootd-cms.infn.it:1094/' + _file
-
-				try:
-
-					if os.path.isfile(_file_name): 
-						utility.print_nice('status', 'File already copied: ', _file_name )
-					else:
-						_command = ['xrdcp', _out, _in]
-						sp.call(_command)
-						utility.print_nice('status', 'xrdcp ' + _out + ' ' + _in )
-				except: 
-					utility.print_nice('error', 'Problem with copying: ', _file_name )
-
-			# Save complete list of files
-			with open( os.path.join( self.logical_file_names, _sample)  + '.txt', 'w') as _outfile:
-				for _file in _unique_LFNs.values():
-					_outfile.writelines(os.path.join( self.output_directory, '/'.join( _file.split('/')[5:])) + '\n')
-
-	@staticmethod               
-	def das_find_datasets(sample, location, data_tier, dbs_instance):
-		utility.print_nice('python_info', 'Called das_find_datasets function.')
-
-		_dataset_query_output = []
-
-		_dataset_query = '--query=dataset=/{}/{}/{}'.format(sample, location, data_tier)
-		if dbs_instance:
-			_dataset_query += ' instance={}'.format(dbs_instance)
-
-		try:
-			# das command
-			_command = ['das_client.py',
-						'--key=~/.globus/userkey.pem',
-						'--cert=~/.globus/usercert.pem',
-						_dataset_query,
-						'--limit=0']
-
-			_proc = sp.Popen(_command, stdin=sp.PIPE, stdout=sp.PIPE)
-			_dataset_query_output =	_proc.communicate()[0].splitlines()
-
-		except sp.CalledProcessError as e:
-			utility.print_nice('error', '{0}The dataset query failed for "{1}".'.format(e, sample))
-
-		return _dataset_query_output
-	
-	@staticmethod   
-	def das_find_files(datasets, data_tier, dbs_instance):
-		utility.print_nice('python_info', 'Called das_find_files function.')
-
-		_LFNs = []
-
-		for _dataset in datasets:
-
-			_file_query = '--query=file dataset={}'.format(_dataset)
-			if dbs_instance:
-				_file_query += ' instance={}'.format(dbs_instance)
-
-			try:
-				# das command
-				_command = ['das_client.py',
-							'--key=~/.globus/userkey.pem',
-							'--cert=~/.globus/usercert.pem',
-							_file_query,
-							'--limit=0']
-				_proc = sp.Popen(_command, stdin=sp.PIPE, stdout=sp.PIPE)
-				_file_query_output = _proc.communicate()[0].splitlines()
-			except sp.CalledProcessError as e:
-				utility.print_nice('error', '{0}\nThe file query failed for "{1}".\n'.format(e, _dataset))
-				continue
-			else:
-				_LFNs.extend(_file_query_output)
-
-		return _LFNs
-
-	@staticmethod
-	def compare_files_in_same_location(sample, locations, location_LFN):
-
-		_lists = {}
-
-		# Open same files for all locations
-		for _location in locations:
-
-			_outdir = os.path.join( location_LFN, _location)
-			try:
-				with open( os.path.join( _outdir, sample + '.txt'), 'r') as _outfile:
-					_lists[ _location + '_old'] = [_line.strip() for _line in _outfile.readlines() if not ('passAll' in _line or 'ext1' in _line)]
-			except:
-				_lists[_location + '_old'] = [] 
-				utility.print_nice('error', 'No file {0} in {1}.'.format(sample, _location))
-		return _lists
-
-	@staticmethod
-	def make_unique_list_of_files(comparison_list, locations):
-
-		_unique_LFNs = {}
-
-		for _location in locations:
-			for _LFN in comparison_list[_location + '_old']:
-			
-				_x = int(_LFN.split('/')[-1][5:-5])
-
-				if _x not in _unique_LFNs:
-					_unique_LFNs[_x] =  _LFN
-
-		return _unique_LFNs
-
-	@staticmethod
-	def missing_files(unique_list, sample, location ):
+		utility.print_nice('python_info', '\nCalled copy_files_single_sample function.')
 		
-		_missing_files = []
+		_missing_file 		= open(os.path.join(self.logical_file_names, sample + '_missing.txt'), 'r')
 
-		for i in xrange(1,len(unique_list)+1):
+		_loc = self.list_of_all_samples_from_sources[sample]
+		_path_to_be_replaced = self.output_directory
+		_path_to_be_replaced_with = os.path.join( self.storage_element[_loc], self.locations[_loc])
+		
 
-			if i not in unique_list:
-				_missing_files.append(sample + '_' + str(i))
+		for _f in _missing_file:
 
-		# Save missing files
-		# print location + '/' + sample + '_missing_files.txt'
-		with open( os.path.join( location + '/' + sample + '_missing_files.txt'), 'aw') as _outfile:
-			_outfile.writelines('\n'.join(_missing_files))
+			# Copy only root files
+			if not self.filter( _f):
+				continue
+
+			_source = _f.strip().replace(_path_to_be_replaced, _path_to_be_replaced_with)
+			_destination = _f.strip().split('tree')[0]
+
+			try:
+				utility.make_directory(_destination)
+				self.wrapper_gfal_cp_file(_source, _destination)
+			except Exception, e:
+				utility.print_nice('error', 'Problem copying {0}'.format(_source))
+				raise
+
+	def copy_files_all_samples_from_config(self):
+		
+		utility.print_nice('python_info', '\nCalled copy_files_all_samples_from_config function.')
+		
+		# Loop over all samples
+		for _s in self.list_of_samples:
+			
+			self.copy_files_single_sample(_s)
+
+
+	def check_root_files(self, sample):
+
+		utility.print_nice('python_info', '\nCalled check_root_files function.')
+
+		_destination_file 	= open(os.path.join(self.logical_file_names, sample + '_local.txt'), 'r')		
+		_error_file 		= open(os.path.join(self.logical_file_names, sample + '_error.txt'), 'w') 
+
+		for _f in _destination_file:
+
+			if not self.filter( _f):
+				continue
+
+			# destination path for each file
+			_lfn_destination = _f.replace('\n', '')
+
+			try:
+				if utility.file_exists(_lfn_destination):
+					utility.print_nice('status', 'File: {0} OK.'.format(_lfn_destination))
+				else:
+					utility.print_nice('error', 'File: {0} not OK.'.format(_lfn_destination))
+					_error_file.write(_lfn_destination + '\n')
+			
+			except Exception, e:
+
+				pass
+
+
+		_error_file.close()
+		_destination_file.close()		
+
+	def remove_files_single_sample(self, sample):
+
+		utility.print_nice('python_info', '\nCalled remove_files_single_sample function.')
+		
+		_missing_file 	= open(os.path.join(self.logical_file_names, sample + '_missing.txt'), 'r') 
+
+		for _f in _missing_file:
+
+			# Create destination path for each file
+			_lfn_destination = _f.strip()
+
+			try:
+				sp.call(['rm', '-rf', _lfn_destination])
+			except Exception, e:
+				sp.call(['rm', '-f', _lfn_destination])
+			else:
+				pass
+			finally:
+				pass
+
+	def filter(self, file_name):
+
+		if not any(_k in file_name for _k in self.search_keywords):
+			return False
+		else:
+			return True
+			
+
+class Queue:
+	def __init__(self):
+		self.items = []
+
+	def isEmpty(self):
+		return self.items == []
+
+	def enqueue(self, item):
+		self.items.insert(0,item)
+
+	def dequeue(self):
+		return self.items.pop()
+
+	def size(self):
+		return len(self.items)

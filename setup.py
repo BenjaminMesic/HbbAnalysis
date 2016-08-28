@@ -8,7 +8,7 @@ if __name__ == '__main__':
 	# ------------ Change only this part -----------------
 	# This will be stored in config files after they are created
 	working_directory 	= os.getcwd()
-	samples_directory 	= '/xxx/yyy/zzz..'
+	samples_directory 	= '/STORE/Hbb/2016_09_VHBBHeppyV23'
 	analysis_name 		= 'Wlv'
 	samples_directory_preselection = '_'.join([samples_directory,'preselection'])
 	# ----------------------------------------------------
@@ -48,14 +48,14 @@ if __name__ == '__main__':
 
 		with open(paths) as f:
 			newText=f.read().\
-					replace('string_working_directory', working_directory).\
-					replace('string_samples_directory', samples_directory).\
-					replace('string_samples_directory_preselection', samples_directory_preselection)
+					replace('<working_directory>', working_directory).\
+					replace('<samples_directory>', samples_directory).\
+					replace('<samples_directory_preselection>', samples_directory_preselection)
 
 		with open(paths, "w") as f:
 			f.write(newText)
 
 	else:
-		print '\nDirectory structure exists.'
+		print '\nDirectory structure exists: config directory!'
 
 	print '\n','-'*50, '\nSetup done!\n', '-'*50

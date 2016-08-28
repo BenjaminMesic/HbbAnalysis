@@ -17,5 +17,7 @@ if __name__ == '__main__':
 	# Preselection
 	p.preselection()
 
+	# p.check_root_files('SingleMuon_local.txt')
+
 	# # Merge files
 	# p.merge()

@@ -1,6 +1,8 @@
 import os
 import ROOT
 
+from utility import utility
+
 ROOT.gROOT.SetBatch(True)
 
 def preselection(i_file, o_file, cut):
@@ -28,9 +30,12 @@ def preselection(i_file, o_file, cut):
 
 if __name__ == '__main__':
 	
-	input_file = 'XXX_1'
-	output_file = 'XXX_2'
+	input_file = '<input_file>'
+	output_file = '<output_file>'
 
-	cut = 'XXX_3'
+	cut = '<cut>'
+
+	output_directory = output_file.split('tree')[0]
+	utility.make_directory(output_directory)
 
 	preselection(input_file, output_file, cut)
