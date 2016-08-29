@@ -54,10 +54,10 @@ class Preselection(object):
 
 		# ------ Paths -------
 		self.working_directory 		= configuration.cfg_files['paths']['working_directory']
-		self.samples_path 			= os.path.join( self.working_directory, 'results', analysis_name, '_step_1_logical_file_names')
 		self.batch_templates_path 	= os.path.join( self.working_directory, 'utility', 'templates', 'preselection_batch')
 		self.batch_path 			= os.path.join( self.working_directory, 'results', analysis_name, '_step_2_preselection_batch')
 		self.location_of_samples 	= configuration.cfg_files['paths']['samples_directory']
+		self.samples_path 			= os.path.join( self.location_of_samples, 'logical_file_names')
 		try:
 			self.location_of_preselected_samples = configuration.cfg_files['paths']['preselection_directory']
 		except Exception, e:

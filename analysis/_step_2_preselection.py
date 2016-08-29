@@ -14,8 +14,8 @@ if __name__ == '__main__':
 	# Create instance of preselection class
 	p = preselection.Preselection(analysis_name, configuration, force_all=False)
 
-	# Preselection
-	p.preselection()
+	# # Preselection
+	# p.preselection()
 
 	# p.check_root_files('SingleMuon_local.txt')
 

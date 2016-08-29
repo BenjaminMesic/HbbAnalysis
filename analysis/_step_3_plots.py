@@ -13,10 +13,11 @@ if __name__ == '__main__':
 	# Plot name (plots.ini)
 	plot_name = 'test_plot'
 	# split samples to subsamples
-	sub_samples = False
+	sub_samples = True
 
 	p = plots.Plot(analysis_name, plot_name, configuration, sub_samples)
 	p.get_variables()
+
 	# p.get_samples_for_plot() # already in init of class	
 	p.get_trees()
 	p.get_samples_number_of_entries()
