@@ -43,7 +43,7 @@ class CopySamples(object):
 		self.list_of_samples    = configuration.cfg_files['samples']
 		self.output_directory   = configuration.cfg_files['paths']['samples_directory']
 		self.working_directory  = configuration.cfg_files['paths']['working_directory']
-		self.logical_file_names = os.path.join( *[self.working_directory,'results', analysis_name, '_step_1_logical_file_names'])
+		self.logical_file_names = os.path.join( self.output_directory, 'logical_file_names')
 
 		# ------ Copy options -------
 		self.storage_element 	= configuration.cfg_files['general']['storage_element']
@@ -60,6 +60,7 @@ class CopySamples(object):
 		# Get the list of all the samples from source
 		self.get_list_of_all_samples_from_sources()
 
+	# Wrappers for ls, cp, which are used for outside
 	def wrapper_gfal_ls(self, location):
 
 		utility.print_nice('python_info', '\nCalled wrapper_gfal_ls function.')
@@ -115,14 +116,16 @@ class CopySamples(object):
 
 		sp.call(_command)
 
-
+	# Used to find files outside
 	def get_list_of_all_samples_from_sources(self):
 
 		utility.print_nice('python_info', '\nCalled get_list_of_all_samples_from_sources function.')
 
+		# Loop over all locations from which you are copying files
 		for _l in self.locations:
 			_path = os.path.join( self.storage_element[_l], self.locations[_l])
 			
+			# execute ls command
 			for _s in self.wrapper_gfal_ls( _path ).splitlines():
 				self.list_of_all_samples_from_sources[_s] = _l
 
@@ -131,7 +134,7 @@ class CopySamples(object):
 		if sample in self.list_of_all_samples_from_sources:
 
 			_loc = self.list_of_all_samples_from_sources[sample]
-			utility.print_nice('status', 'Sample {0} exists in {1}.'.format(sample, _loc))	
+			utility.print_nice('status', '\nSample {0} exists in {1}.'.format(sample, _loc))	
 
 			# sample txt file to store LFNs
 			_outpath = os.path.join(self.logical_file_names, sample + '.txt')
@@ -163,7 +166,7 @@ class CopySamples(object):
 
 			self.save_logical_file_names_source(_s)
 
-
+	# Used to find files locally, check if something is missing
 	def save_logical_file_names_from_config_destination(self, sample):
 
 		utility.print_nice('python_info', '\nCalled save_logical_file_names_from_config_destination function.')
@@ -203,7 +206,7 @@ class CopySamples(object):
 			
 			self.save_logical_file_names_from_config_destination(_s)
 
-
+	# Copy files
 	def copy_files_single_sample(self, sample):
 
 		utility.print_nice('python_info', '\nCalled copy_files_single_sample function.')
@@ -240,7 +243,7 @@ class CopySamples(object):
 			
 			self.copy_files_single_sample(_s)
 
-
+	# Check if .root files ok
 	def check_root_files(self, sample):
 
 		utility.print_nice('python_info', '\nCalled check_root_files function.')
@@ -271,6 +274,7 @@ class CopySamples(object):
 		_error_file.close()
 		_destination_file.close()		
 
+	# Remove all files for one sample
 	def remove_files_single_sample(self, sample):
 
 		utility.print_nice('python_info', '\nCalled remove_files_single_sample function.')
@@ -291,6 +295,7 @@ class CopySamples(object):
 			finally:
 				pass
 
+	# Only copy files which have the keywords
 	def filter(self, file_name):
 
 		if not any(_k in file_name for _k in self.search_keywords):
@@ -314,3 +319,5 @@ class Queue:
 
 	def size(self):
 		return len(self.items)
+
+
