@@ -1,9 +1,12 @@
 import os
 import subprocess as sp
-import time
-import utility
 
-class CopySamples(object):
+import MiscTool
+import DirectoryTool
+import TreeTool
+
+
+class CopyTool(object):
 	'''
 	-----------
 	Description:
@@ -29,12 +32,11 @@ class CopySamples(object):
 
 	-----------
 	To DO:
-	forceredo, overwriting,
 
 	''' 
 	def __init__(self, analysis_name, configuration, force_all):
 
-		utility.print_nice('python_info', '\nCreated instance of CopySamples class')
+		MiscTool.print_nice('python_info', '\nCreated instance of CopyTool class')
 
 		# force preselection on already existing files
 		self.force_all = force_all  
@@ -52,10 +54,10 @@ class CopySamples(object):
 		self.search_keywords	= ['.root']
 
 
-		utility.print_nice('analysis_info', 'Analysis name:', analysis_name)
-		utility.print_nice('analysis_info', 'Samples will be stored in:', self.output_directory)
-		utility.print_nice('analysis_info', 'Working_directory:', self.working_directory)
-		utility.print_nice('analysis_info_list', 'List of samples:', self.list_of_samples.keys())
+		MiscTool.print_nice('analysis_info', 'Analysis name:', analysis_name)
+		MiscTool.print_nice('analysis_info', 'Samples will be stored in:', self.output_directory)
+		MiscTool.print_nice('analysis_info', 'Working_directory:', self.working_directory)
+		MiscTool.print_nice('analysis_info_list', 'List of samples:', self.list_of_samples.keys())
 
 		# Get the list of all the samples from source
 		self.get_list_of_all_samples_from_sources()
@@ -63,18 +65,18 @@ class CopySamples(object):
 	# Wrappers for ls, cp, which are used for outside
 	def wrapper_gfal_ls(self, location):
 
-		utility.print_nice('python_info', '\nCalled wrapper_gfal_ls function.')
+		MiscTool.print_nice('python_info', '\nCalled wrapper_gfal_ls function.')
 
 		_command = ['gfal-ls'] #,'-Hl']
 		_command.append('srm:/' + location)
 
-		utility.print_nice('python_info', 'Command: ' + ' '.join(_command))
+		MiscTool.print_nice('python_info', 'Command: ' + ' '.join(_command))
 
 		return sp.check_output(_command)
 
 	def wrapper_gfal_ls_r(self, location):
 		
-		utility.print_nice('python_info', '\nCalled wrapper_gfal_ls_r function.')
+		MiscTool.print_nice('python_info', '\nCalled wrapper_gfal_ls_r function.')
 
 		_paths = Queue()
 		_paths.enqueue(location)
@@ -106,20 +108,20 @@ class CopySamples(object):
 
 	def wrapper_gfal_cp_file(self, source, destination):
 	
-		utility.print_nice('python_info', '\nCalled wrapper_gfal_cp_file function.')
+		MiscTool.print_nice('python_info', '\nCalled wrapper_gfal_cp_file function.')
 
 		_command = ['gfal-copy', '--force']
 		_command.append('srm:/' + source)
 		_command.append('file:///' + destination)
 
-		utility.print_nice('python_info', 'Command: ' + ' '.join(_command))
+		MiscTool.print_nice('python_info', 'Command: ' + ' '.join(_command))
 
 		sp.call(_command)
 
 	# Used to find files outside
 	def get_list_of_all_samples_from_sources(self):
 
-		utility.print_nice('python_info', '\nCalled get_list_of_all_samples_from_sources function.')
+		MiscTool.print_nice('python_info', '\nCalled get_list_of_all_samples_from_sources function.')
 
 		# Loop over all locations from which you are copying files
 		for _l in self.locations:
@@ -134,14 +136,14 @@ class CopySamples(object):
 		if sample in self.list_of_all_samples_from_sources:
 
 			_loc = self.list_of_all_samples_from_sources[sample]
-			utility.print_nice('status', '\nSample {0} exists in {1}.'.format(sample, _loc))	
+			MiscTool.print_nice('status', '\nSample {0} exists in {1}.'.format(sample, _loc))	
 
 			# sample txt file to store LFNs
 			_outpath = os.path.join(self.logical_file_names, sample + '.txt')
 			
 			# If txt file already exists skip
 			if os.path.isfile(_outpath) and not self.force_all:
-				utility.print_nice('python_info','File {0} already exists.'.format(_outpath))
+				MiscTool.print_nice('python_info','File {0} already exists.'.format(_outpath))
 			
 			else:
 				_path = os.path.join(self.storage_element[_loc], self.locations[_loc], sample)
@@ -149,17 +151,17 @@ class CopySamples(object):
 				with open(_outpath, 'w') as _outfile:
 					for _lfn in _logical_file_names:
 						_outfile.write(_lfn + '\n')
-				utility.print_nice('status', 'The LFNs were written to "{}".'.format(_outpath))
+				MiscTool.print_nice('status', 'The LFNs were written to "{}".'.format(_outpath))
 
 		else:
-			utility.print_nice('error', _s + ' is missing!')
+			MiscTool.print_nice('error', _s + ' is missing!')
 
 	def save_logical_file_names_all_samples_from_config_source(self):
 
-		utility.print_nice('python_info', '\nCalled save_logical_files_names_all_samples_from_config function.')
+		MiscTool.print_nice('python_info', '\nCalled save_logical_files_names_all_samples_from_config function.')
 
 		# Create the output directory if it doesn't exist
-		utility.make_directory(self.logical_file_names)
+		DirectoryTool.DirectoryTool.make_directory(self.logical_file_names)
 
 		# Loop over all samples
 		for _s in self.list_of_samples:
@@ -169,8 +171,8 @@ class CopySamples(object):
 	# Used to find files locally, check if something is missing
 	def save_logical_file_names_from_config_destination(self, sample):
 
-		utility.print_nice('python_info', '\nCalled save_logical_file_names_from_config_destination function.')
-		utility.print_nice('status', 'Getting local lfns for sample {0}'.format(sample))
+		MiscTool.print_nice('python_info', '\nCalled save_logical_file_names_from_config_destination function.')
+		MiscTool.print_nice('status', 'Getting local lfns for sample {0}'.format(sample))
 
 		_source_file 		= open(os.path.join(self.logical_file_names, sample + '.txt'),'r')
 		_destination_file 	= open(os.path.join(self.logical_file_names, sample + '_local.txt'), 'w')
@@ -199,7 +201,7 @@ class CopySamples(object):
 
 	def save_logical_file_names_all_samples_from_config_destination(self):
 
-		utility.print_nice('python_info', '\nCalled save_logical_file_names_all_samples_from_config_destination function.')
+		MiscTool.print_nice('python_info', '\nCalled save_logical_file_names_all_samples_from_config_destination function.')
 		
 		# Loop over all samples
 		for _s in self.list_of_samples:
@@ -209,7 +211,7 @@ class CopySamples(object):
 	# Copy files
 	def copy_files_single_sample(self, sample):
 
-		utility.print_nice('python_info', '\nCalled copy_files_single_sample function.')
+		MiscTool.print_nice('python_info', '\nCalled copy_files_single_sample function.')
 		
 		_missing_file 		= open(os.path.join(self.logical_file_names, sample + '_missing.txt'), 'r')
 
@@ -228,15 +230,15 @@ class CopySamples(object):
 			_destination = _f.strip().split('tree')[0]
 
 			try:
-				utility.make_directory(_destination)
+				DirectoryTool.DirectoryTool.make_directory(_destination)
 				self.wrapper_gfal_cp_file(_source, _destination)
 			except Exception, e:
-				utility.print_nice('error', 'Problem copying {0}'.format(_source))
+				MiscTool.print_nice('error', 'Problem copying {0}'.format(_source))
 				raise
 
 	def copy_files_all_samples_from_config(self):
 		
-		utility.print_nice('python_info', '\nCalled copy_files_all_samples_from_config function.')
+		MiscTool.print_nice('python_info', '\nCalled copy_files_all_samples_from_config function.')
 		
 		# Loop over all samples
 		for _s in self.list_of_samples:
@@ -246,7 +248,7 @@ class CopySamples(object):
 	# Check if .root files ok
 	def check_root_files(self, sample):
 
-		utility.print_nice('python_info', '\nCalled check_root_files function.')
+		MiscTool.print_nice('python_info', '\nCalled check_root_files function.')
 
 		_destination_file 	= open(os.path.join(self.logical_file_names, sample + '_local.txt'), 'r')		
 		_error_file 		= open(os.path.join(self.logical_file_names, sample + '_error.txt'), 'w') 
@@ -260,15 +262,14 @@ class CopySamples(object):
 			_lfn_destination = _f.replace('\n', '')
 
 			try:
-				if utility.file_exists(_lfn_destination):
-					utility.print_nice('status', 'File: {0} OK.'.format(_lfn_destination))
+				if TreeTool.TreeTool.check_if_tree_ok(_lfn_destination):
+					MiscTool.print_nice('status', 'File: {0} OK.'.format(_lfn_destination))
 				else:
-					utility.print_nice('error', 'File: {0} not OK.'.format(_lfn_destination))
+					MiscTool.print_nice('error', 'File: {0} not OK.'.format(_lfn_destination))
 					_error_file.write(_lfn_destination + '\n')
 			
 			except Exception, e:
-
-				pass
+				MiscTool.print_nice('error', 'File: {0} could not be checked.'.format(_lfn_destination))
 
 
 		_error_file.close()
@@ -277,7 +278,7 @@ class CopySamples(object):
 	# Remove all files for one sample
 	def remove_files_single_sample(self, sample):
 
-		utility.print_nice('python_info', '\nCalled remove_files_single_sample function.')
+		MiscTool.print_nice('python_info', '\nCalled remove_files_single_sample function.')
 		
 		_missing_file 	= open(os.path.join(self.logical_file_names, sample + '_missing.txt'), 'r') 
 
@@ -305,6 +306,12 @@ class CopySamples(object):
 			
 
 class Queue:
+	'''
+	-----------
+	Description:
+	Just a simple queue needed to store logical file names in wrapper_gfal_ls_r.
+
+	''' 
 	def __init__(self):
 		self.items = []
 
@@ -319,5 +326,4 @@ class Queue:
 
 	def size(self):
 		return len(self.items)
-
 

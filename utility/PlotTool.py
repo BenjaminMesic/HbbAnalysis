@@ -2,12 +2,13 @@ import os
 
 import ROOT
 
-import utility
+import MiscTool
+import TreeTool
 import tdrStyle
 
 ROOT.gROOT.SetBatch(True)
 
-class Plot(object):
+class PlotTool(object):
 	'''
 	-----------
 	Description:
@@ -54,9 +55,9 @@ class Plot(object):
 	-stack_histograms function update variable argument
 	'''	
 	
-	def __init__(self, analysis_name, plot_name, configuration, subsamples = False):
+	def __init__(self, analysis_name, plot_name, configuration, subsamples = False, event_by_event = False):
 
-		utility.print_nice('python_info', '\nCreated instance of Plot class')
+		MiscTool.print_nice('python_info', '\nCreated instance of Plot class')
 
 		# Load plot style, defined in tdrStyle.py
 		tdrStyle.tdrStyle()
@@ -102,24 +103,28 @@ class Plot(object):
 		# ------ Samples -------
 		# self.samples_in_dir 	= [x.split('.')[0] for x in os.listdir(self.samples_directory) if 'root' in x]
 		self.samples_all 		= configuration.cfg_files['samples']
-		self.subsamples 		= subsamples
+		self.subsamples			= subsamples
 		self.samples_plot 		= self.get_samples_for_plot()
 
 		# ------ Weights, scaling -------
 		self.weights 					= configuration.cfg_files['weights']
-		self.samples_scale_factors 	= {}
-		self.samples_number_of_entries = {}
+		self.samples_scale_factors 		= {}
+		self.samples_number_of_entries 	= {}
 
-		utility.print_nice('analysis_info', 'Working directory:', self.working_directory)
-		utility.print_nice('analysis_info', 'Location of samples:', self.samples_directory)
-		utility.print_nice('analysis_info', '\nBlinding cut:', self.blinding_cut)
-		utility.print_nice('analysis_info', 'Plot cut:', self.plot_cut)
-		utility.print_nice('analysis_info_list', 'Plot options:', self.plot_options.values())
-		utility.print_nice('analysis_info_list', 'List of samples:', self.samples_plot.keys())
+		# ------ Other -------
+		self.event_by_event_analysis = event_by_event
 
+		MiscTool.print_nice('analysis_info', 'Working directory:', self.working_directory)
+		MiscTool.print_nice('analysis_info', 'Location of samples:', self.samples_directory)
+		MiscTool.print_nice('analysis_info', 'Blinding cut:', self.blinding_cut)
+		MiscTool.print_nice('analysis_info', 'Plot cut:', self.plot_cut)
+		MiscTool.print_nice('analysis_info_list', 'Plot options:', self.plot_options.values())
+		MiscTool.print_nice('analysis_info_list', 'List of samples:', self.samples_plot.keys())
+
+	# Get all possible informations from samples (cut applied in get_trees)
 	def get_samples_for_plot(self):
 
-		utility.print_nice('python_info', '\nCalled get_samples_for_plot function.')
+		MiscTool.print_nice('python_info', '\nCalled get_samples_for_plot function.')
 		
 		_samples = {}
 		# if true include all samples in config file
@@ -190,26 +195,26 @@ class Plot(object):
 	def get_trees(self):
 
 		# Make trees with all cuts applied, if doesnt exist create them and store in cache dir
-		self.cache_trees = utility.trim_trees( self.final_cut, self.subsamples_cut, self.samples_plot, self.samples_directory)
+		self.cache_trees = TreeTool.TreeTool.trim_trees( self.final_cut, self.subsamples_cut, self.samples_plot, self.samples_directory)
 
 	def get_samples_number_of_entries(self):
 
-		utility.print_nice('python_info', '\nCalled get_samples_number_of_entries function.')
+		MiscTool.print_nice('python_info', '\nCalled get_samples_number_of_entries function.')
 
 		for _id,_f in self.cache_trees.iteritems():
 					
 			try:
 				_file 	= ROOT.TFile.Open( _f,'read')
 				self.samples_number_of_entries[_id] = _file.Get('Count').GetEntries()
-				utility.print_nice('analysis_info', _id + ' number of entries', _file.Get('Count').GetEntries())
+				MiscTool.print_nice('analysis_info', _id + ' number of entries', _file.Get('Count').GetEntries())
 				_file.Close()
 			except Exception, e:
-				utility.print_nice('error', 'Problem with loading: ' + _f)
+				MiscTool.print_nice('error', 'Problem with loading: ' + _f)
 				raise
 
 	def get_samples_scale_factors(self):
 
-		utility.print_nice('python_info', '\nCalled get_samples_scale_factors function.')
+		MiscTool.print_nice('python_info', '\nCalled get_samples_scale_factors function.')
 
 		_luminosity	= self.general_options['luminosity']
 
@@ -221,11 +226,12 @@ class Plot(object):
 			else:
 				self.samples_scale_factors[_s] = str(1.0)
 
-			utility.print_nice('analysis_info', _id + ' scale factor:', self.samples_scale_factors[_s])
+			MiscTool.print_nice('analysis_info', _id + ' scale factor:', self.samples_scale_factors[_s])
 
+	# Creating histograms
 	def set_and_save_histograms(self):
 
-		utility.print_nice('python_info', '\nCalled set_and_save_histograms function.')
+		MiscTool.print_nice('python_info', '\nCalled set_and_save_histograms function.')
 
 		# Histograms will be saved in new root file
 		_output_name = os.path.join(self.plot_directory, self.plot_name + '.root')
@@ -249,28 +255,56 @@ class Plot(object):
 				_sample_name = self.samples_plot[_id]
 				_sample_type = self.samples_all[_sample_name]['types']
 
-				# Weights part
-				if _sample_type == 'data':
-					_weight = '1'
-				else:
-					_weight = '*'.join(self.weights.values())
-
-				# Scale factors part
-				if _sample_type == 'mc':
-					_weight = _weight + '*' + self.samples_scale_factors[_sample_name]
-
-				# ---- Explanation of weight as Draw parameter ----
-				# Selection = "weight *(boolean expression)"
-				# If the Boolean expression evaluates to true,
-				# the histogram is filled with a weight.
-				# If the weight is not explicitly specified it is assumed to be 1.
-					
-				# Get histogram from sample
+				# Open tree and create histogram
 				_input = ROOT.TFile.Open( _f,'read')
 				_tree = _input.Get('tree')
 				_histogram = ROOT.TH1D( _name, _name, _nbin, _x_min, _x_max)
-				_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
 
+				# Fill histograms event by event or all from the tree
+				if self.event_by_event_analysis:
+
+					MiscTool.print_nice('status', '\nFill histogram event by event.')
+
+					_number_of_entries = _tree.GetEntriesFast()
+					MiscTool.print_nice('analysis_info', 'Sample:', _id)
+					MiscTool.print_nice('analysis_info', 'Number of entries (cached):', _number_of_entries)
+
+					for _ev in xrange(_number_of_entries):
+
+						_tree.GetEntry(_ev)
+
+						print  '\n'
+						print 'Event number:', _ev
+					
+						# Here comes the code you wish to apply
+
+				else:
+					MiscTool.print_nice('status', '\nFill histogram directly from tree.')
+
+					_number_of_entries = _tree.GetEntriesFast()
+					MiscTool.print_nice('analysis_info', 'Sample:', _id)
+					MiscTool.print_nice('analysis_info', 'Number of entries (cached):', _number_of_entries)
+
+					# Weights part
+					_weight = '1'
+					if _sample_type != 'data':
+						_weight = '*'.join(self.weights.values())
+
+					# Scale factors part
+					if _sample_type == 'mc':
+						_weight = _weight + '*' + self.samples_scale_factors[_sample_name]
+
+					# ---- Explanation of weight as Draw parameter ----
+					# Selection = "weight *(boolean expression)"
+					# If the Boolean expression evaluates to true,
+					# the histogram is filled with a weight.
+					# If the weight is not explicitly specified it is assumed to be 1.
+						
+					# Get histogram from the tree directly
+					_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
+
+
+				# Histograms plot options
 				if _sample_type == 'data':
 					_histogram.SetMarkerStyle(20)
 					_histogram.SetMarkerColor(self.plot_definitions['colors'][_id])
@@ -291,9 +325,10 @@ class Plot(object):
 
 				_input.Close()
 
+	# Just loading histograms, setup plots and actual plots
 	def get_histograms(self):
 
-		utility.print_nice('python_info', '\nCalled get_histograms function.')
+		MiscTool.print_nice('python_info', '\nCalled get_histograms function.')
 
 		# Get all histograms from _input_name and store them in dictionary		
 		try:
@@ -301,7 +336,7 @@ class Plot(object):
 			_file 	= ROOT.TFile.Open( _input,'read')
 
 		except Exception, e:
-			utility.print_nice('error', 'Problem with loading: ' + file_name)
+			MiscTool.print_nice('error', 'Problem with loading: ' + file_name)
 			raise
 
 		_dirlist = _file.GetListOfKeys()
@@ -318,14 +353,14 @@ class Plot(object):
 
 	def get_variables(self):
 
-		utility.print_nice('python_info', '\nCalled get_variables function.')
+		MiscTool.print_nice('python_info', '\nCalled get_variables function.')
 
 		# Get all plot _variables
 		self.variables = self.plot_options['variables']	
 
 	def set_stack_histograms(self, variable):
 
-		utility.print_nice('python_info', '\nCalled set_stack_histograms function.')
+		MiscTool.print_nice('python_info', '\nCalled set_stack_histograms function.')
 
 		self.pads['stack_pad'].cd()
 
@@ -403,7 +438,7 @@ class Plot(object):
 
 	def set_ratio_histograms(self, variable):
 
-		utility.print_nice('python_info', '\nCalled set_ratio_histograms function.')
+		MiscTool.print_nice('python_info', '\nCalled set_ratio_histograms function.')
 
 		# Histogram plot options
 		_nbin 	= self.plot_options['variables'][variable]['n_bin']
@@ -423,7 +458,7 @@ class Plot(object):
 
 
 		else:
-			utility.print_nice('status', 'Not able to plot Ratio, Data or MC sample is missing.')
+			MiscTool.print_nice('status', 'Not able to plot Ratio, Data or MC sample is missing.')
 
 			for _type in self.ratio_histograms.keys():
 				_ratio_histogram = self.ratio_histograms[_type].GetStack().Last()
@@ -454,10 +489,9 @@ class Plot(object):
 		self.ratio_horizontal_line['ratio_line'].SetLineColor(ROOT.kBlack)
 		self.ratio_horizontal_line['ratio_line'].Draw()
 
-
 	def set_legends(self, variable):
 
-		utility.print_nice('python_info', '\nCalled set_legends function.')
+		MiscTool.print_nice('python_info', '\nCalled set_legends function.')
 
 		_legend_dictionary = self.plot_definitions['legend']
 
@@ -502,12 +536,12 @@ class Plot(object):
 			# Add error graph
 			self.legends['stack_legend'].AddEntry(self.error_graph['stack_error'],"MC uncert. (stat.)","fl")
 		else:
-			utility.print_nice('status', 'Not able to add errors, MC sample is missing.')
+			MiscTool.print_nice('status', 'Not able to add errors, MC sample is missing.')
 		# ------ Lower pad: Ratio Histogram -------
 
 	def set_error_graphs(self, variable):
 
-		utility.print_nice('python_info', '\nCalled set_error_graphs function.')
+		MiscTool.print_nice('python_info', '\nCalled set_error_graphs function.')
 
 		if variable + '-mc-ratio' in self.ratio_histograms.keys():
 
@@ -523,11 +557,11 @@ class Plot(object):
 			self.error_graph['stack_error'].Draw('SAME2')
 
 		else:
-			utility.print_nice('status', 'Not able to add errors, MC sample is missing.')	
+			MiscTool.print_nice('status', 'Not able to add errors, MC sample is missing.')	
 		
 	def set_pads(self):
 		
-		utility.print_nice('python_info', '\nCalled set_pads function.')
+		MiscTool.print_nice('python_info', '\nCalled set_pads function.')
 
 		# There are two plots: histogram and ratio. Each one needs its Pad
 
@@ -550,7 +584,7 @@ class Plot(object):
 
 	def set_labels(self):
 
-		utility.print_nice('python_info', '\nCalled set_labels function.')
+		MiscTool.print_nice('python_info', '\nCalled set_labels function.')
 
 		# Labels for stack pad
 		self.pads['stack_pad'].cd()
@@ -563,7 +597,7 @@ class Plot(object):
 
 	def set_canvas(self,v):
 
-		utility.print_nice('python_info', '\nCalled set_canvas function.')
+		MiscTool.print_nice('python_info', '\nCalled set_canvas function.')
 
 		self.canvas[v] = ROOT.TCanvas(v, v, 600, 600)
 		self.canvas[v].SetFillStyle(4000)
@@ -572,7 +606,7 @@ class Plot(object):
 
 	def plot(self):
 
-		utility.print_nice('python_info', '\nCalled plot function.')
+		MiscTool.print_nice('python_info', '\nCalled plot function.')
 		
 		for _v in self.variables:
 
@@ -609,28 +643,4 @@ class Plot(object):
 		text.DrawLatex(ndcX,ndcY,txt)
 		return text
 
-class ClassicalPlots(object):
-	'''
-	-----------
-	Description:
-
-	-----------	
-	Input files:
-
-	-----------
-	Parameters:
-
-	-----------
-	Functions:
-
-	-----------
-	Useful commands:
-
-
-	-----------
-	To DO:
-
-	'''	
-	def __init__(self):
-		utility.print_nice('python_info', '\nCreated instance of ClassicalPlots')
 		
