@@ -10,7 +10,7 @@ if __name__ == '__main__':
 	# Load all configuration files
 	configuration = ConfigurationTool.ConfigurationLoader(analysis_name)
 
-	force_all = True
+	force_all = False
 
 	# Create instance of preselection class
 	p = PreselectionTool.PreselectionTool(analysis_name, configuration, force_all)
