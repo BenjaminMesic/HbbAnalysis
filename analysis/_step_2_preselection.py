@@ -1,23 +1,24 @@
-from utility import utility, preselection
-
+from utility import MiscTool, ConfigurationTool, PreselectionTool
 
 if __name__ == '__main__':
 
-	utility.print_nice('python_info',  '\nStep 2: preselection.')
+	MiscTool.print_nice('python_info',  '\nStep 2: preselection.')
 
 	# Get analysis name, default is 'Wlv'
-	analysis_name = utility.analysis_name()
+	analysis_name = MiscTool.analysis_name()
 
 	# Load all configuration files
-	configuration = utility.ConfigurationFiles(analysis_name)
+	configuration = ConfigurationTool.ConfigurationLoader(analysis_name)
+
+	force_all = True
 
 	# Create instance of preselection class
-	p = preselection.Preselection(analysis_name, configuration, force_all=False)
+	p = PreselectionTool.PreselectionTool(analysis_name, configuration, force_all)
 
 	# # Preselection
 	# p.preselection()
 
 	# p.check_root_files('SingleMuon_local.txt')
 
-	# # Merge files
-	# p.merge()
+	# Merge files
+	p.merge()

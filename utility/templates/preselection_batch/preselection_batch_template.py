@@ -1,7 +1,7 @@
 import os
 import ROOT
 
-from utility import utility
+from utility import DirectoryTool
 
 ROOT.gROOT.SetBatch(True)
 
@@ -36,6 +36,6 @@ if __name__ == '__main__':
 	cut = '<cut>'
 
 	output_directory = output_file.split('tree')[0]
-	utility.make_directory(output_directory)
+	DirectoryTool.DirectoryTool.make_directory(output_directory)
 
 	preselection(input_file, output_file, cut)
