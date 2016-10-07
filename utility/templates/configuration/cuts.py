@@ -1,4 +1,4 @@
-cuts = {
+{
 	'preselection_cut': '(Vtype==2 || Vtype==3) && V_pt>100 && HCSV_reg_pt>100 && Jet_btagCSV[hJCidx[1]]>0.4',	
 	'blinding_cut': '1',
 

@@ -1,4 +1,4 @@
-general = {
+{
 	'storage_element' : {
 		'pisa' 	: '/stormfe1.pi.infn.it:8444/srm/managerv2?SFN=/cms',
 		'cern'	: '/srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos',

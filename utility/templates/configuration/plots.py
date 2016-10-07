@@ -1,4 +1,4 @@
-plots = {
+{
 	'test_plot' :{
 		'samples' 	: ['all'],
 		'variables'	: {

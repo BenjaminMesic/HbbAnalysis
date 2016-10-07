@@ -51,18 +51,10 @@ def get_configuration_files(analysis_name):
 
 	for _c in _files:
 
-		# Ignore __init__ and pyc files
-		if '__init__' in _c or '.pyc' in _c:
-			continue
-
-		_c = _c.replace('.py', '')
 		Print('analysis_info', '', _c)
 
-		x = '.'.join( ['configuration', analysis_name, _c] )
-		_module = __import__(x, globals(), locals(), ['object'], -1) 
-
 		try:
-			_configuration_files[_c.split('.')[0]] = getattr(_module, _c)
+			_configuration_files[_c.split('.')[0]] = eval(open(os.path.join( _configuration_files_path, _c)).read())
 		except Exception, e:
 			Print('error', 'Problem with loading: ' + _c)
 			raise

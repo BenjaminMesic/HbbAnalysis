@@ -1,4 +1,4 @@
-samples = {
+{
 	'SingleElectron':{
 		'id'	: 'SE',
 		'sub'	: ['SE_el'],
