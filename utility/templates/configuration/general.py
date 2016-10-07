@@ -1,4 +1,4 @@
-{
+general = {
 	"storage_element" : {
 		"pisa" 	: "/stormfe1.pi.infn.it:8444/srm/managerv2?SFN=/cms",
 		"cern"	: "/srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos",
@@ -7,10 +7,10 @@
 	},
 
 	"locations" 	: {
-		"psi" : "store/user/perrozzi/VHBBHeppyV23",
-		"pisa":	"store/user/cvernier/VHBBHeppyV23"		
+		"psi" : "store/user/perrozzi/VHBBHeppyV24bis",
+		"pisa":	"store/user/arizzi/VHBBHeppyV24"		
 	},
 
-	"luminosity": 1.0,
+	"luminosity": 12.9,
 	"tag" : "13TeV"
 }

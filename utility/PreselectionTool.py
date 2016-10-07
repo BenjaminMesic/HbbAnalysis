@@ -4,9 +4,9 @@ import subprocess as sp
 
 import ROOT
 
-import MiscTool
-import BatchTool
-import TreeTool
+from utility import MiscTool
+from utility import BatchTool
+from utility import TreeTool
 
 
 class PreselectionTool(object):
@@ -47,63 +47,66 @@ class PreselectionTool(object):
 
 	'''	
 
-	def __init__(self, analysis_name, configuration, force_all):
+	def __init__(self, analysis_name, configuration, force_all, sample = None):
 
-		MiscTool.print_nice('python_info', '\nCreated instance of Preselection class')
+		MiscTool.Print('python_info', '\nCreated instance of Preselection class')
 
 		# force preselection on already existing files
 		self.force_all = force_all
 
 		# ------ Paths -------
-		self.working_directory 		= configuration.cfg_files['paths']['working_directory']
-		self.batch_templates_path 	= os.path.join( self.working_directory, 'utility', 'templates', 'preselection_batch')
-		self.batch_path 			= os.path.join( self.working_directory, 'results', analysis_name, '_step_2_preselection_batch')
-		self.location_of_samples 	= configuration.cfg_files['paths']['samples_directory']
-		self.samples_path 			= os.path.join( self.location_of_samples, 'logical_file_names')
+		self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
+		self.path_batch_templates 	= os.path.join( self.path_working_directory, 'utility', 'templates', 'preselection_batch')
+		self.path_batch_scripts 	= os.path.join( self.path_working_directory, 'results', analysis_name, '_2_preselection_batch')
+		self.path_samples 			= configuration['paths']['samples_directory']
+		self.path_list_of_samples 	= os.path.join( self.path_samples, 'logical_file_names')
 		try:
-			self.location_of_preselected_samples = configuration.cfg_files['paths']['preselection_directory']
+			self.path_preselected_samples = configuration['paths']['preselection_directory']
 		except Exception, e:
-			self.location_of_preselected_samples = self.location_of_samples + '_preselection'
+			self.path_preselected_samples = self.path_samples + '_preselection'
 
 		# ------ Samples -------
-		self.list_of_samples = filter(lambda x: '_local' in x , os.listdir(self.samples_path)) #['SingleMuon_local.txt'] #
+		if sample == None:
+			self.list_of_samples = filter(lambda x: '_local.txt' in x , os.listdir(self.path_list_of_samples)) # ['SingleMuon_local.txt', 'SingleElectron_local.txt']#
+		else:
+			self.list_of_samples = ['{0}_local.txt'.format(sample)]
+		self.list_of_search_keywords		= ['.root']
 
 		# ------ Cuts -------
-		self.preselection_cut = configuration.cfg_files['cuts']['preselection_cut']
+		self.preselection_cut = configuration['cuts']['preselection_cut']
 
 
-		MiscTool.print_nice('analysis_info', 'Working directory:', self.working_directory)
-		MiscTool.print_nice('analysis_info', 'Path to list of samples:', self.samples_path)
-		MiscTool.print_nice('analysis_info', 'Path to batch templates:', self.batch_templates_path)
-		MiscTool.print_nice('analysis_info', 'Path to batch scripts:', self.batch_path)
-		MiscTool.print_nice('analysis_info', '\nPreselection cut:', self.preselection_cut)
-
+		MiscTool.Print('analysis_info', 'Working directory:', self.path_working_directory)
+		MiscTool.Print('analysis_info', 'Path to list of samples:', self.path_list_of_samples)
+		MiscTool.Print('analysis_info', 'Path to batch templates:', self.path_batch_templates)
+		MiscTool.Print('analysis_info', 'Path to batch scripts:', self.path_batch_scripts)
+		MiscTool.Print('analysis_info', '\nPreselection cut:', self.preselection_cut)
 
 	def preselection(self):
 
-		MiscTool.print_nice('python_info', '\nCalled preselection function.')
+		MiscTool.Print('python_info', '\nCalled preselection function.')
 
 		# Loop over samples
 		for _sample in self.list_of_samples:
 
-			MiscTool.print_nice('status', '\n' + _sample)
+			MiscTool.Print('status', '\n' + _sample)
 
-			_files = open(os.path.join(self.samples_path, _sample),'r')
+			_files = open(os.path.join(self.path_list_of_samples, _sample),'r')
 
 			# For each file create job by copying template script
 			for _i,_f in enumerate(_files):
 
-				if '.root' not in _f:
+				if not self.filter(_f):
 					continue
 
 				_file = _f.replace('\n', '')
 
-				_output_file = _file.replace(self.location_of_samples, self.location_of_preselected_samples)		
-				_inital_directory, _script_name = _file.replace(self.location_of_samples, self.batch_path).split('tree')
+				_output_file = _file.replace(self.path_samples, self.path_preselected_samples)		
+				_inital_directory, _script_name = _file.replace(self.path_samples, self.path_batch_scripts).split('tree')
 
 				# If preselected file already exists skip
 				if TreeTool.TreeTool.check_if_tree_ok(_output_file) and not self.force_all:
-					MiscTool.print_nice('python_info','File {0} already exists.'.format(_output_file))
+					MiscTool.Print('python_info','File {0} already exists.'.format(_output_file))
 					continue
 
 				_batch_arguments = {
@@ -121,22 +124,22 @@ class PreselectionTool(object):
 
 	def merge(self):
 
-		MiscTool.print_nice('python_info', '\nCalled merge function.')
+		MiscTool.Print('python_info', '\nCalled merge function.')
 
 		# Loop over samples
 		for _sample in self.list_of_samples:
 
-			MiscTool.print_nice('status', '\nMerging preselected files for: ' + _sample)
+			MiscTool.Print('status', '\nMerging preselected files for: ' + _sample)
 
-			_files = open(os.path.join(self.samples_path, _sample),'r')
+			_files = open(os.path.join( self.path_list_of_samples, _sample),'r')
 
 			# name of merged root file			
-			_file_name = _sample.split('_')[0] + '.root'
-			_merge_file_name = os.path.join(self.location_of_preselected_samples, _file_name )
+			_file_name = _sample.replace('_local.txt', '.root')
+			_merge_file_name = os.path.join( self.path_preselected_samples, _file_name )
 
 			# If merged preselected file already exists skip
 			if TreeTool.TreeTool.check_if_tree_ok(_merge_file_name) and not self.force_all:
-				MiscTool.print_nice('python_info','File {0} already exists.'.format(_merge_file_name))
+				MiscTool.Print('python_info','File {0} already exists.'.format(_merge_file_name))
 				continue
 
 			_merger = ROOT.TFileMerger(ROOT.kFALSE)
@@ -144,40 +147,49 @@ class PreselectionTool(object):
 
 			for _i,_f in enumerate(_files):
 
-				_file = _f.replace('\n', '').replace(self.location_of_samples, self.location_of_preselected_samples)
+				_file = _f.replace('\n', '').replace( self.path_samples, self.path_preselected_samples)
 
-				MiscTool.print_nice('status', _file)
+				MiscTool.Print('status', _file)
 
 				# if i != 0:
 				# 	continue
 
 				# Check if file exists, if not store
 				if not os.path.isfile(_file):
-					MiscTool.print_nice('error', 'File {0} is missing.'.format(_file))
+					MiscTool.Print('error', 'File {0} is missing.'.format(_file))
 					continue
 
 				_merger.AddFile(_file)				
 				
 			_merger.Merge()
 
-			MiscTool.print_nice('status', '\nMerging done.')
+			MiscTool.Print('status', '\nMerging done.')
 
-	def check_root_files(self, sample):
+	def check_root_preselected_files(self, sample):
 
-		MiscTool.print_nice('python_info', '\nCalled check_root_files function.')
+		MiscTool.Print('python_info', '\nCalled check_root_preselected_files function.')
 
-		_destination_file 	= open(os.path.join(self.samples_path, sample),'r')	
+		_destination_file 	= open(os.path.join(self.path_list_of_samples, sample),'r')	
 
 		for _f in _destination_file:
 
 			# destination path for each file
-			_file = _f.replace('\n', '').replace(self.location_of_samples, self.location_of_preselected_samples)
+			_file = _f.replace('\n', '').replace(self.path_samples, self.path_preselected_samples)
 
 			try:
 				if TreeTool.TreeTool.check_if_tree_ok(_file):
-					MiscTool.print_nice('status', 'File: {0} OK.'.format(_file))
+					pass
+					# MiscTool.Print('status', 'File: {0} OK.'.format(_file))
 				else:
-					MiscTool.print_nice('error', 'File: {0} not OK.'.format(_file))
+					MiscTool.Print('error', 'File: {0} not OK.'.format(_file))
 			
 			except Exception, e:
 				pass
+
+	# Only work on files which have the keywords
+	def filter(self, file_name):
+
+		if not any(_k in file_name for _k in self.list_of_search_keywords):
+			return False
+		else:
+			return True

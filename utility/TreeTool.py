@@ -3,8 +3,7 @@ import hashlib
 
 import ROOT
 
-import MiscTool
-import DirectoryTool
+from utility import MiscTool
 
 
 class TreeTool(object):
@@ -30,7 +29,7 @@ class TreeTool(object):
 
 	'''	
 	def __init__(self, arg):
-		MiscTool.print_nice('python_info', '\nCreated instance of TreeTool class')
+		MiscTool.Print('python_info', '\nCreated instance of TreeTool class')
 	
 	@staticmethod	
 	def check_if_tree_ok(file_name):
@@ -62,24 +61,38 @@ class TreeTool(object):
 	def trim_trees(cut, subsamples_cut, samples_list, location_of_samples, forceReDo = False):
 		''' Creates cached trees with cut and returns their dictionary'''
 
-		MiscTool.print_nice('python_info', '\nCalled trim_trees function.')
+		MiscTool.Print('python_info', '\nCalled trim_trees function.')
 
 		_samples_dict = {} 
 
 		for _id in samples_list:
 
-			_unique_name = hashlib.md5(cut).hexdigest()
+			# ------ Sub samples cut -------
+			if any(x in subsamples_cut for x in _id.split('_')):
+				_subsample_cut = ' && ' + subsamples_cut[_id.split('_')[1]]
+			else:
+				_subsample_cut = ''
+
+			_cut = ''.join([cut, _subsample_cut])
+
+			# output file name based on md5 of complete cut for this sample
+			_unique_name = hashlib.md5(_cut).hexdigest()
 			_source = os.path.join(location_of_samples, samples_list[_id] + '.root')
 			_tmp_name = _id + '_' + _unique_name + '.root'
 			_tmp_directory = os.path.join(location_of_samples, 'cache')
 			_tmp = os.path.join(_tmp_directory, _tmp_name)
 
-			DirectoryTool.DirectoryTool.make_directory(_tmp_directory)
+			MiscTool.make_directory(_tmp_directory)
 
-			MiscTool.print_nice('status', '\nSample: ' + samples_list[_id])
-			MiscTool.print_nice('analysis_info', 'Cut:', cut)
-			MiscTool.print_nice('analysis_info', 'Source:', _source)
-			MiscTool.print_nice('analysis_info', 'Tmp_file:', _tmp_name)
+			MiscTool.Print('status', '\nSample: ' + samples_list[_id])
+			MiscTool.Print('analysis_info', 'Source:', _source)
+			MiscTool.Print('analysis_info', 'Tmp_file:', _tmp_name)
+			MiscTool.Print('analysis_info', 'Cut:', cut)
+			for x in _id.split('_'):
+				if x in subsamples_cut:
+					MiscTool.Print('analysis_info', 'Subsample Cut:', subsamples_cut[x])
+				else:
+					pass
 
 			_tmp_status_ok = TreeTool.check_if_tree_ok(_tmp)
 
@@ -93,7 +106,7 @@ class TreeTool(object):
 						_output = ROOT.TFile.Open(_tmp,'create')
 					_output.cd()
 				except:
-					MiscTool.print_nice('error', 'Problem with creating _tmp. Delete root file and try again.')
+					MiscTool.Print('error', 'Problem with creating _tmp. Delete root file and try again.')
 
 				# Load source file
 				_input = ROOT.TFile.Open( _source,'read')
@@ -112,14 +125,6 @@ class TreeTool(object):
 					_obj.Write(key.GetName())
 				_output.cd()
 
-				# ------ Sub samples cut -------
-				if any(x in subsamples_cut for x in _id.split('_')):
-					_subsample_cut = '&&' + subsamples_cut[_id.split('_')[1]]
-				else:
-					_subsample_cut = ''
-
-				_cut = ''.join([cut, _subsample_cut])
-
 				#Problem here: not working when empty tree
 				_cuttedTree = _tree.CopyTree(_cut)
 				_cuttedTree.Write()
@@ -128,10 +133,10 @@ class TreeTool(object):
 				del _input
 				_output.Close()
 				del _output
-				MiscTool.print_nice('status', 'File done.')
+				MiscTool.Print('status', 'File done.')
 
 			else:
-				MiscTool.print_nice('python_info', 'File exists and it is ok.')
+				MiscTool.Print('python_info', 'File exists and it is ok.')
 
 			_samples_dict[_id] = _tmp
 

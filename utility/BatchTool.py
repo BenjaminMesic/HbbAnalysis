@@ -2,8 +2,7 @@ import os
 import subprocess as sp
 import stat
 
-import DirectoryTool
-import MiscTool
+from utility import MiscTool
 
 class BatchTool(object):
 	'''
@@ -51,8 +50,7 @@ class BatchTool(object):
 
 
 		# make batch directory
-		DirectoryTool.DirectoryTool.make_directory(self.arguments['<initial_directory>'])
-
+		MiscTool.make_directory(self.arguments['<initial_directory>'])
 
 	def make_scripts(self):
 
@@ -62,7 +60,6 @@ class BatchTool(object):
 			'.sh' : '\n'.join(self.template_sh),
 			'.txt': '\n'.join(self.template_txt)
 		}
-
 
 		with open(self.arguments['python_template']) as f:
 			_scripts['.py'] = f.read()
@@ -93,7 +90,7 @@ class BatchTool(object):
 		_sh = os.path.join(self.arguments['<initial_directory>'], self.arguments['<script_name>'] + '.sh')
 		os.chmod(_sh, os.stat(_sh).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 		
-		MiscTool.print_nice('status', _sh)
+		MiscTool.Print('status', _sh)
 
 		_working_dir = os.getcwd()
 		os.chdir( self.arguments['<initial_directory>'] )

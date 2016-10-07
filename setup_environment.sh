@@ -1,0 +1,8 @@
+
+# tcsh
+setenv PYTHONPATH ${PYTHONPATH}:$PWD
+setenv Hbb_WORKING_DIRECTORY $PWD
+# # bash
+# export PYTHONPATH=${PYTHONPATH}:$PWD
+# export Hbb_WORKING_DIRECTORY=$PWD
+
