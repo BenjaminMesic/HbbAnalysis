@@ -67,7 +67,21 @@ class PreselectionTool(object):
 
 		# ------ Samples -------
 		if sample == None:
-			self.list_of_samples = filter(lambda x: '_local.txt' in x , os.listdir(self.path_list_of_samples)) # ['SingleMuon_local.txt', 'SingleElectron_local.txt']#
+
+			_samples_id_list = configuration['samples']['task']['preselection']
+
+			if _samples_id_list[0] == 'all':
+
+				self.list_of_samples = [ _s + '_local.txt' for _s in  configuration['samples']['list'].keys()]
+
+			else:
+				self.list_of_samples = []
+				for _id in _samples_id_list:
+					for _s in configuration['samples']['list']:
+						if _id == configuration['samples']['list'][_s]['ID']:
+							self.list_of_samples.append( _s + '_local.txt')
+							break
+
 		else:
 			self.list_of_samples = ['{0}_local.txt'.format(sample)]
 		self.list_of_search_keywords		= ['.root']
@@ -115,7 +129,7 @@ class PreselectionTool(object):
 					'<output_file>'			: _output_file, 					# file w/ presel
 					'<cut>'					: self.preselection_cut,			# 'V_pt>100'
 					'<script_name>' 		: _script_name.replace('.root',''), # 1401
-					'python_template' 		: os.path.join(self.batch_templates_path, 'preselection_batch_template.py')
+					'python_template' 		: os.path.join(self.path_batch_templates, 'preselection_batch_template.py')
 				}
 
 				_batch = BatchTool.BatchTool(_batch_arguments)

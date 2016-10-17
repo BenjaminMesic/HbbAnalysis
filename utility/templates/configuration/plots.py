@@ -1,6 +1,5 @@
 {
 	'test_plot' :{
-		'samples' 	: ['all'],
 		'variables'	: {
 			'V_pt' : {
 				'n_bin'	: 10,
@@ -16,7 +15,6 @@
 	},
 
 	'signal_region' :{
-		'samples' 	: ['SE', 'SM', 'WH', 'TT', 'WJet100', 'QCD100', 'QCD200', 'QCD300', 'QCD400', 'QCD500', 'QCD700', 'QCD1000', 'QCD1500', 'QCD2000'],
 		'variables'	: {
 			'rho' : {
 				'n_bin'	: 20,

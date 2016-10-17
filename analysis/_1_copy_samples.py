@@ -16,8 +16,8 @@ if __name__ == '__main__':
 	# Create instance of CopySamples 
 	copy_samples = CopyTool.CopyTool(analysis_name, configuration, force_all)
 
-	# # Get the list of all the samples from sources
-	# copy_samples.get_list_of_samples_from_sources()
+	# Get the list of all the samples from sources
+	copy_samples.get_list_of_samples_from_sources()
 
 	# # This one takes a lot of time because it executes ls command for each directory from pisa/psi..
 	# copy_samples.save_logical_file_names_all_samples_from_config_source()

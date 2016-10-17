@@ -30,7 +30,7 @@ class TreeTool(object):
 	'''	
 	def __init__(self, arg):
 		MiscTool.Print('python_info', '\nCreated instance of TreeTool class')
-	
+
 	@staticmethod	
 	def check_if_tree_ok(file_name):
 			''' 
@@ -58,86 +58,68 @@ class TreeTool(object):
 			return _status
 
 	@staticmethod
-	def trim_trees(cut, subsamples_cut, samples_list, location_of_samples, forceReDo = False):
-		''' Creates cached trees with cut and returns their dictionary'''
+	def trim_tree(cut, input_file, ID, forceReDo=False):
+		''' Create and return cached tree'''
 
-		MiscTool.Print('python_info', '\nCalled trim_trees function.')
+		MiscTool.Print('python_info', '\nCalled trim_tree function.')
 
-		_samples_dict = {} 
+		# Set location of files
+		_path = '/'.join(input_file.split('/')[:-1])
+		_path_cache = os.path.join( _path, 'cache')
+		MiscTool.make_directory(_path_cache)
 
-		for _id in samples_list:
+		# output file name based on md5 of complete cut for this sample
+		_unique_name = hashlib.md5(cut).hexdigest()
+		_output_file = os.path.join( _path_cache, ID + '_' + _unique_name + '.root' )
 
-			# ------ Sub samples cut -------
-			if any(x in subsamples_cut for x in _id.split('_')):
-				_subsample_cut = ' && ' + subsamples_cut[_id.split('_')[1]]
-			else:
-				_subsample_cut = ''
+		MiscTool.Print('status', 'Output file: ', _output_file)
+		MiscTool.Print('analysis_info', 'ID:', ID)
+		MiscTool.Print('analysis_info', 'Input_file:', input_file)
+		MiscTool.Print('analysis_info', 'Cut:', cut)
 
-			_cut = ''.join([cut, _subsample_cut])
+		_check_output_file = TreeTool.check_if_tree_ok(_output_file)
 
-			# output file name based on md5 of complete cut for this sample
-			_unique_name = hashlib.md5(_cut).hexdigest()
-			_source = os.path.join(location_of_samples, samples_list[_id] + '.root')
-			_tmp_name = _id + '_' + _unique_name + '.root'
-			_tmp_directory = os.path.join(location_of_samples, 'cache')
-			_tmp = os.path.join(_tmp_directory, _tmp_name)
-
-			MiscTool.make_directory(_tmp_directory)
-
-			MiscTool.Print('status', '\nSample: ' + samples_list[_id])
-			MiscTool.Print('analysis_info', 'Source:', _source)
-			MiscTool.Print('analysis_info', 'Tmp_file:', _tmp_name)
-			MiscTool.Print('analysis_info', 'Cut:', cut)
-			for x in _id.split('_'):
-				if x in subsamples_cut:
-					MiscTool.Print('analysis_info', 'Subsample Cut:', subsamples_cut[x])
+		# If file doesn't exists or it is corrupted
+		if forceReDo or (not _check_output_file):
+			
+			# Create cached file (tmp file)
+			try:
+				if forceReDo:
+					_output = ROOT.TFile.Open( _output_file,'recreate')
 				else:
-					pass
-
-			_tmp_status_ok = TreeTool.check_if_tree_ok(_tmp)
-
-			# If file doesn't exists or it is corrupted
-			if (not _tmp_status_ok) or forceReDo:
-				# Creating cached file (tmp file)
-				try:
-					if forceReDo:
-						_output = ROOT.TFile.Open(_tmp,'recreate')
-					else:
-						_output = ROOT.TFile.Open(_tmp,'create')
-					_output.cd()
-				except:
-					MiscTool.Print('error', 'Problem with creating _tmp. Delete root file and try again.')
-
-				# Load source file
-				_input = ROOT.TFile.Open( _source,'read')
-				_tree = _input.Get('tree')
-				assert type(_tree) is ROOT.TTree
-
-				# ------ Here starts actual skimming -------
-				_input.cd()
-				_obj = ROOT.TObject
-				for key in ROOT.gDirectory.GetListOfKeys():
-					_input.cd()
-					_obj = key.ReadObj()
-					if _obj.GetName() == 'tree':
-						continue
-					_output.cd()
-					_obj.Write(key.GetName())
+					_output = ROOT.TFile.Open( _output_file,'create')
 				_output.cd()
+			except:
+				MiscTool.Print('error', 'Problem with creating _tmp. Delete root file and try again.')
 
-				#Problem here: not working when empty tree
-				_cuttedTree = _tree.CopyTree(_cut)
-				_cuttedTree.Write()
-				_output.Write()
-				_input.Close()
-				del _input
-				_output.Close()
-				del _output
-				MiscTool.Print('status', 'File done.')
+			# Load source file
+			_input_file = ROOT.TFile.Open( input_file,'read')
+			_tree = _input_file.Get('tree')
+			assert type(_tree) is ROOT.TTree
 
-			else:
-				MiscTool.Print('python_info', 'File exists and it is ok.')
+			# ------ Here starts actual skimming -------
+			_input_file.cd()
+			_obj = ROOT.TObject
+			for key in ROOT.gDirectory.GetListOfKeys():
+				_input_file.cd()
+				_obj = key.ReadObj()
+				if _obj.GetName() == 'tree':
+					continue
+				_output.cd()
+				_obj.Write(key.GetName())
+			_output.cd()
 
-			_samples_dict[_id] = _tmp
+			# Apparently problem here: not working when empty tree
+			_cuttedTree = _tree.CopyTree(cut)
+			_cuttedTree.Write()
+			_output.Write()
+			_input_file.Close()
+			del _input_file
+			_output.Close()
+			del _output
+			MiscTool.Print('status', 'File done.')
 
-		return _samples_dict
+		else:
+			MiscTool.Print('python_info', 'File exists and it is ok.')
+
+		return _output_file

@@ -55,33 +55,33 @@ class PlotTool(object):
 	-histograms_stack function update variable argument
 	'''	
 	
-	def __init__(self, analysis_name, plot_name, configuration, subsamples = False, event_by_event = False):
+	def __init__(self, task, analysis_name, configuration, sample_tool, event_by_event):
 
 		MiscTool.Print('python_info', '\nCreated instance of Plot class')
 
 		# Load plot style, defined in tdrStyle.py
 		tdrStyle.tdrStyle()
 
-		# Load VHbbNameSpace.h
-		ROOT.gROOT.ProcessLine(".L ../utility/VHbbNameSpace.h")
-		# print ROOT.VHbb.deltaPhi(1,2)
+		# # Load VHbbNameSpace.h
+		# ROOT.gROOT.ProcessLine(".L ../utility/VHbbNameSpace.h")
+		# # print ROOT.VHbb.deltaPhi(1,2)
 
 		# ------ Paths -------
 		self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
-		self.path_plots 		= os.path.join( self.path_working_directory, 'plots', analysis_name)
-		try:
-			self.path_samples = configuration['paths']['preselection_directory']
-		except Exception, e:
-			self.path_samples = self.path_samples + '_preselection'
+		self.path_plots			= os.path.join( self.path_working_directory, 'plots', analysis_name)
 
-		# ------ Plot config -------
-		self.plot_name 			= plot_name
-		self.plot_options 		= configuration['plots'][self.plot_name]
+		# ------ Samples -------
+		self.sample_tool 	= sample_tool
+
+		# ------ Configuration -------
+		self.task 				= task
+		self.event_by_event 	= event_by_event
+
+		self.plot_options 		= configuration['plots'][self.task]
 		self.plot_definitions 	= configuration['plots']['definitions']
 		self.general_options 	= configuration['general']
 
 		# ------ Plot features -----
-		self.trees_cached 				= {}
 		self.histograms 				= {}
 		self.histograms_stack 			= {}
 		self.variables 					= {}
@@ -94,179 +94,60 @@ class PlotTool(object):
 		self.horizontal_line_ratio 		= {}
 		self.canvas 					= {}
 
-		# ------ Cuts -------
-		self.cut_subsamples 	= configuration['cuts']['subsamples_cut']
-		self.cut_blinding 		= configuration['cuts']['blinding_cut']
-		self.cut_plot 			= configuration['cuts'][self.plot_name]		
-		self.cut_final 			= '&&'.join([self.cut_blinding, self.cut_plot])
-
-		# ------ Samples -------
-		# self.samples_in_dir 	= [x.split('.')[0] for x in os.listdir(self.samples_directory) if 'root' in x]
-		self.samples_all 		= configuration['samples']
-		self.subsamples			= subsamples
-		self.samples_for_plot 	= self.get_samples_for_plot()
-
-		# ------ Weights, scaling -------
+		# ------ Weights -------
 		self.weights 					= configuration['weights']
-		self.samples_scale_factors 		= {}
-		self.samples_number_of_entries 	= {}
 
 		# ------ Other -------
-		self.event_by_event_analysis = event_by_event
-
+		MiscTool.Print('analysis_info', 'Task:', self.task)
 		MiscTool.Print('analysis_info', 'Working directory:', self.path_working_directory)
-		MiscTool.Print('analysis_info', 'Location of samples:', self.path_samples)
-		MiscTool.Print('analysis_info', 'Blinding cut:', self.cut_blinding)
-		MiscTool.Print('analysis_info', 'Plot cut:', self.cut_plot)
+		MiscTool.Print('analysis_info', 'Location of samples:', self.path_plots)
 		MiscTool.Print('analysis_info_list', 'Plot options:', self.plot_options.values())
-		MiscTool.Print('analysis_info_list', 'List of samples:', self.samples_for_plot.keys())
 
-	# Get all possible informations from samples (cut applied in get_trees)
-	def get_samples_for_plot(self):
-
-		MiscTool.Print('python_info', '\nCalled get_samples_for_plot function.')
+	# ------ Plot functions -------
+	def set_variables(self):
 		
-		_samples = {}
-		# if true include all samples in config file
-		_include_all_samples = bool(self.plot_options['samples'][0] == 'all')
-		# if self.subsamples set True split samples on subsamples
-		_include_subsamples = self.subsamples
+		MiscTool.Print('python_info', '\nCalled get_variables function.')
 
-		# Check if samples should be split
-		if _include_subsamples:
+		# Get all plot _variables
+		self.variables = self.plot_options['variables']	
 
-			if _include_all_samples:
-				
-				for _s in self.samples_all:
-
-					# If sample has subsamples, add its ids
-					if 'sub' in self.samples_all[_s]:
-						for _id in self.samples_all[_s]['sub']:
-							_samples[_id] = _s		
-
-					# If sample doesn't have subsamples, add samples id
-					else:
-						_samples[self.samples_all[_s]['id']] = _s
-
-			# Include only ids which are explicitly written in config file
-			# possible to add subsample as well
-			else:
-				for _s in self.samples_all:
-
-					# Loop over all plot ids in plot config file
-					for _id in self.plot_options['samples']:
-
-						# If sample has subsamples, look for id
-						if 'sub' in self.samples_all[_s]:
-
-							# If sub sample id explicitly written in plot config
-							if _id in self.samples_all[_s]['sub']:
-								_samples[_id] = _s
-
-							# If sample id explicitly written in plot config, include all subs
-							elif _id in self.samples_all[_s]['id']:
-								for _id_sub in self.samples_all[_s]['sub']:
-									_samples[_id_sub] = _s	
-
-						# If sample doesn't have subsamples
-						elif _id == self.samples_all[_s]['id']:
-							_samples[self.samples_all[_s]['id']] = _s
-
-		else:
-			# Check if maybe all samples should be included
-			if _include_all_samples:
-				_samples = {self.samples_all[_s]['id']: _s for _s in self.samples_all}
-
-			# Include only samples which are explicitly written in plot config file
-			# possible to add subsample as well
-			else:
-				for _id in self.plot_options['samples']:
-
-					for _s in self.samples_all:
-
-						# If sample doesn't have subsamples
-						if _id == self.samples_all[_s]['id']:
-							_samples[self.samples_all[_s]['id']] = _s
-
-						# If sample has subsamples, look for id
-						elif 'sub' in self.samples_all[_s]:
-							if _id in self.samples_all[_s]['sub']:
-								_samples[_id] = _s
-
-		return _samples
-
-	def get_trees(self):
-
-		# Make trees with all cuts applied, if doesnt exist create them and store in cache dir
-		self.trees_cached = TreeTool.TreeTool.trim_trees( self.cut_final, self.cut_subsamples, self.samples_for_plot, self.path_samples)
-
-	def get_samples_number_of_entries(self):
-
-		MiscTool.Print('python_info', '\nCalled get_samples_number_of_entries function.')
-
-		for _id,_f in self.trees_cached.iteritems():
-					
-			try:
-				_file 	= ROOT.TFile.Open( _f,'read')
-				self.samples_number_of_entries[_id] = _file.Get('Count').GetEntries()
-				MiscTool.Print('analysis_info', _id + ' number of entries', _file.Get('Count').GetEntries())
-				_file.Close()
-			except Exception, e:
-				MiscTool.Print('error', 'Problem with loading: ' + _f)
-				raise
-
-	def get_samples_scale_factors(self):
-
-		MiscTool.Print('python_info', '\nCalled get_samples_scale_factors function.')
-
-		_luminosity	= self.general_options['luminosity']
-
-		for _id,_s in self.samples_for_plot.iteritems():
-
-			if self.samples_all[_s]['types'] == 'mc':
-				_x_sec	= self.samples_all[_s]['xsec'] 
-				self.samples_scale_factors[_s]= str(_luminosity*_x_sec/self.samples_number_of_entries[_id])
-			else:
-				self.samples_scale_factors[_s] = str(1.0)
-
-			MiscTool.Print('analysis_info', _id + ' scale factor:', self.samples_scale_factors[_s])
-
-	# Creating histograms
 	def set_and_save_histograms(self):
 
 		MiscTool.Print('python_info', '\nCalled set_and_save_histograms function.')
 
 		# Histograms will be saved in new root file
-		_output_name = os.path.join(self.path_plots, self.plot_name + '.root')
+		_output_name = os.path.join(self.path_plots, self.task + '.root')
 		_output = ROOT.TFile.Open( _output_name,'recreate')
 		_output.Close()
 
 		_counter = {}
 
-		# Loop over all samples
-		for _id, _f in self.trees_cached.iteritems():
+		# # Loop over all samples
+		for _s in self.sample_tool.samples:
+
+			_f = self.sample_tool.samples[_s].files[_s]['tree']
 
 			# Loop over all variables for each sample
-			for _var in self.plot_options['variables'].keys():
+			for _var in self.plot_options['variables']:
 
-				_name =  _var + '-' + _id
+				_name =  _var + '-' + _s
 
 				# Histogram plot options
 				_nbin 	= self.plot_options['variables'][_var]['n_bin']
 				_x_min 	= self.plot_options['variables'][_var]['x_min']
 				_x_max 	= self.plot_options['variables'][_var]['x_max']
 
-				# Check if sample is data or mc
-				_sample_name = self.samples_for_plot[_id]
-				_sample_type = self.samples_all[_sample_name]['types']
+				# # Check if sample is data or mc
+				# _sample_name = self.samples_for_plot[_id]
+				# _sample_type = self.samples_all[_sample_name]['types']
 
 				# Open tree and create histogram
 				_input = ROOT.TFile.Open( _f,'read')
 				_tree = _input.Get('tree')
 				_histogram = ROOT.TH1D( _name, _name, _nbin, _x_min, _x_max)
 
-				# Fill histograms event by event or all from the tree
-				if self.event_by_event_analysis:
+				# Fill histograms event by event
+				if self.event_by_event:
 
 					MiscTool.Print('status', '\nFill histogram event by event.')
 
@@ -283,32 +164,22 @@ class PlotTool(object):
 						# print  '\n'
 						# print 'Event number:', _ev
 
-						# print _tree.nvLeptons
-						# print _tree.vLeptons_pt[0]
-						# print _tree.vLeptons_pdgId[0]
-
-						# if abs(_tree.vLeptons_pdgId[0]) != 11:
-						# 	print 1
-						if _tree.evt not in _counter:
-							_counter[_tree.evt] = 1
-						else:
-							_counter[_tree.evt] += 1
-
+				# Or by using Draw Function
 				else:
 					MiscTool.Print('status', '\nFill histogram directly from tree.')
 
 					_number_of_entries = _tree.GetEntriesFast()
-					MiscTool.Print('analysis_info', 'Sample:', _id)
-					MiscTool.Print('analysis_info', 'Number of entries (cached):', _number_of_entries)
+					MiscTool.Print('analysis_info', 'Sample:', _s)
+					MiscTool.Print('analysis_info', '# entries (skimmed tree): ', _number_of_entries)
 
-					# Weights part
+		 			# Weights part
 					_weight = '1'
-					# if _sample_type != 'data':
-					# 	_weight = '*'.join(self.weights.values())
+					if self.sample_tool.samples[_s].types != 'data':
+						_weight = '*'.join(self.weights.values())
 
 					# Scale factors part
-					if _sample_type == 'mc':
-						_weight = _weight + '*' + self.samples_scale_factors[_sample_name]
+					if self.sample_tool.samples[_s].types == 'mc':
+						_weight = _weight + '*' + self.sample_tool.samples[_s].normalization_factor
 
 					# ---- Explanation of weight as Draw parameter ----
 					# Selection = "weight *(boolean expression)"
@@ -321,12 +192,12 @@ class PlotTool(object):
 
 
 				# Histograms plot options
-				if _sample_type == 'data':
+				if self.sample_tool.samples[_s].types == 'data':
 					_histogram.SetMarkerStyle(20)
-					_histogram.SetMarkerColor(self.plot_definitions['colors'][_id])
+					_histogram.SetMarkerColor(self.plot_definitions['colors'][_s])
 				else:
-					_histogram.SetFillColor(self.plot_definitions['colors'][_id])
-					_histogram.SetLineColor(self.plot_definitions['colors'][_id])
+					_histogram.SetFillColor(self.plot_definitions['colors'][_s])
+					_histogram.SetLineColor(self.plot_definitions['colors'][_s])
 
 
 				# c = ROOT.TCanvas('c', 'c', 800, 800)
@@ -341,14 +212,13 @@ class PlotTool(object):
 
 				_input.Close()
 
-	# Just loading histograms, setup plots and actual plots
 	def get_histograms(self):
 
 		MiscTool.Print('python_info', '\nCalled get_histograms function.')
 
 		# Get all histograms from _input_name and store them in dictionary		
 		try:
-			_input 	= os.path.join(self.path_plots, self.plot_name + '.root')
+			_input 	= os.path.join(self.path_plots, self.task + '.root')
 			_file 	= ROOT.TFile.Open( _input,'read')
 
 		except Exception, e:
@@ -363,17 +233,6 @@ class PlotTool(object):
 			self.histograms[_key.GetName()] = _file.Get(_key.GetName())
 			_key = iter.Next()
 
-
-
-		self.samples_scale_factors
-
-	def get_variables(self):
-
-		MiscTool.Print('python_info', '\nCalled get_variables function.')
-
-		# Get all plot _variables
-		self.variables = self.plot_options['variables']	
-
 	def set_histograms_stack(self, variable):
 
 		MiscTool.Print('python_info', '\nCalled set_histograms_stack function.')
@@ -384,14 +243,16 @@ class PlotTool(object):
 		_ordered_histograms = {'data':[], 'mc':[]}
 
 		# Loop over plot samples for ordering histograms and creating stack
-		for _id in self.samples_for_plot.keys():
+		# for _id in self.samples_for_plot.keys():
+		for _s in self.sample_tool.samples:
 
-			_sample_name = self.samples_for_plot[_id]
-			_type = self.samples_all[_sample_name]['types']
+			_type = self.sample_tool.samples[_s].types
 			_stack_name 	= variable + '-' + _type + '-stack'
 			_ratio_name 	= variable + '-' + _type + '-ratio'
+
 			# Store samples in order histogram list
-			_ordered_histograms[_type].append(_id)
+			_ordered_histograms[_type].append(_s)
+
 			# Create stack histograms (same stack many times but it is ok)
 			self.histograms_stack[_stack_name] = ROOT.THStack(_stack_name, _stack_name)				
 			self.histograms_ratio[_ratio_name] = ROOT.THStack(_ratio_name, _ratio_name)
@@ -437,20 +298,20 @@ class PlotTool(object):
 		for _t in sorted(_draw_type, reverse=True):
 			self.histograms_stack[_t].Draw(_draw_options[_t])
 	
-			# # Stack options must be set after Draw() function has been called
-			# self.histograms_stack[_t].SetTitle('')
-			# self.histograms_stack[_t].GetXaxis().SetTitle('')
-			# self.histograms_stack[_t].GetXaxis().SetLabelSize(0)
+			# Stack options must be set after Draw() function has been called
+			self.histograms_stack[_t].SetTitle('')
+			self.histograms_stack[_t].GetXaxis().SetTitle('')
+			self.histograms_stack[_t].GetXaxis().SetLabelSize(0)
 
-			# self.histograms_stack[_t].GetYaxis().SetTitleSize(20)
-			# self.histograms_stack[_t].GetYaxis().SetTitleFont(43)
-			# self.histograms_stack[_t].GetYaxis().SetTitleOffset(1.55)
+			self.histograms_stack[_t].GetYaxis().SetTitleSize(20)
+			self.histograms_stack[_t].GetYaxis().SetTitleFont(43)
+			self.histograms_stack[_t].GetYaxis().SetTitleOffset(1.55)
 
-			# self.histograms_stack[_t].GetYaxis().SetLabelSize(0.)
-			# _axis = ROOT.TGaxis( -5, 20, -5, 220, 20,220,510,"")
-			# _axis.SetLabelFont(43) # Absolute font size in pixel (precision 3)
-			# _axis.SetLabelSize(15)
-			# _axis.Draw()
+			self.histograms_stack[_t].GetYaxis().SetLabelSize(0.)
+			_axis = ROOT.TGaxis( -5, 20, -5, 220, 20,220,510,"")
+			_axis.SetLabelFont(43) # Absolute font size in pixel (precision 3)
+			_axis.SetLabelSize(15)
+			_axis.Draw()
 
 	def set_histograms_ratio(self, variable):
 
@@ -526,16 +387,16 @@ class PlotTool(object):
 		self.legends['stack_legend'].Draw()
 
 		# Arrange stack legend entries. Starting first with data, mc, errors
-		self.legends_entries['stack_legend'] = list(set([_legend_dictionary[_id]
-											for _id in self.samples_for_plot.keys()]))
+		self.legends_entries['stack_legend'] = list(set([_legend_dictionary[_s]
+											for _s in self.sample_tool.samples]))
 
 		_additional_dict = {}
-		for _id in self.samples_for_plot.keys():
-			if _legend_dictionary[_id] == 'Data':
-			 	if self.histograms[variable + '-' + _id].GetMarkerSize() > 1.0:
-					_additional_dict[_legend_dictionary[_id]] = _id
+		for _s in self.sample_tool.samples:
+			if _legend_dictionary[_s] == 'Data':
+			 	if self.histograms[variable + '-' + _s].GetMarkerSize() > 1.0:
+					_additional_dict[_legend_dictionary[_s]] = _s
 			else:
-				_additional_dict[_legend_dictionary[_id]] = _id
+				_additional_dict[_legend_dictionary[_s]] = _s
 
 		# Set data on the first place if it exists of course
 		try:
@@ -560,6 +421,7 @@ class PlotTool(object):
 		else:
 			MiscTool.Print('status', 'Not able to add errors, MC sample is missing.')
 		# ------ Lower pad: Ratio Histogram -------
+		# TBD
 
 	def set_graphs_errors(self, variable):
 
@@ -653,7 +515,7 @@ class PlotTool(object):
 			# Setup labels
 			self.set_labels()
 
-			self.canvas[_v].SaveAs( os.path.join(self.path_plots, self.plot_name + '_' + _v + '_.pdf'))
+			self.canvas[_v].SaveAs( os.path.join(self.path_plots, self.task + '_' + _v + '_.pdf'))
 
 	@staticmethod
 	def myText(txt="CMS Preliminary",ndcX=0,ndcY=0,size=0.8):

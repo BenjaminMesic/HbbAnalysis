@@ -1,4 +1,4 @@
 {
-	'samples_directory': 	'<samples_directory>',
-	'preselection_directory': 	'<samples_directory_preselection>'
+	'samples_directory': 	'/STORE/Hbb/2016_10_VHBBHeppyV24',
+	'preselection_directory': 	'/STORE/Hbb/2016_10_VHBBHeppyV24_preselection'
 }

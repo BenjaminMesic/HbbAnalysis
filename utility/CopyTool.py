@@ -50,7 +50,7 @@ class CopyTool(object):
 		self.path_logical_file_names = os.path.join( self.path_output_directory, 'logical_file_names')
 
 		# ------ Copy options -------
-		self.list_of_samples_from_config    = configuration['samples']
+		self.list_of_samples_from_config    = configuration['samples']['list']
 		self.list_of_storage_elements 		= configuration['general']['storage_element']
 		self.list_of_locations 				= configuration['general']['locations']
 		self.list_of_samples_from_sources 	= {}
