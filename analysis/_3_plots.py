@@ -26,7 +26,7 @@ if __name__ == '__main__':
 	# Just creating histograms
 	p.set_variables()
 	p.set_and_save_histograms()
-	p.get_histograms()
+	p.get_and_prepare_histograms()
 
 	# Create canvas, make stack histograms and do plot
 	p.plot()
