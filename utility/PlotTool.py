@@ -177,6 +177,9 @@ class PlotTool(object):
 					# Get histogram from the tree directly
 					_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
 
+					MiscTool.Print('analysis_info', 'Expected yields (skimmed tree): ', _histogram.GetIntegral())
+
+
 				# Save histograms to new root file
 				_output = ROOT.TFile.Open( _output_name, 'update')
 				_histogram.Write()
