@@ -177,7 +177,7 @@ class PlotTool(object):
 					# Get histogram from the tree directly
 					_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
 
-					MiscTool.Print('analysis_info', 'Expected yields (skimmed tree): ', _histogram.GetIntegral())
+					MiscTool.Print('analysis_info', 'Expected yields (skimmed tree): ', _histogram.Integral())
 
 
 				# Save histograms to new root file
@@ -276,7 +276,7 @@ class PlotTool(object):
 		# ------ Draw Stacks ------- 
 		# Very compact way for the drawing options
 		_draw_options = {
-			'__'.join([variable, 'mc', 'stack'])	: '',
+			'__'.join([variable, 'mc', 'stack'])	: 'hist',
 			'__'.join([variable, 'data', 'stack']): 'hist p'
 			}
 
