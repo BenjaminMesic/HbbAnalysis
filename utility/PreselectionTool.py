@@ -29,11 +29,7 @@ class PreselectionTool(object):
 
 	-----------
 	Functions:
-	preselection() - get list of files from _step_1_logical_file_names
-					directory. If you want to add other samples start 
-					first add them in config file samples.ini and then
-					start _step_1 script which creates file with logical
-					file names. preselection() doesnt need samples.ini
+	preselection()
 
 
 
@@ -58,12 +54,9 @@ class PreselectionTool(object):
 		self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
 		self.path_batch_templates 	= os.path.join( self.path_working_directory, 'utility', 'templates', 'preselection_batch')
 		self.path_batch_scripts 	= os.path.join( self.path_working_directory, 'results', analysis_name, '_2_preselection_batch')
-		self.path_samples 			= configuration['paths']['samples_directory']
+		self.path_samples 			= configuration['paths']['path_samples']
 		self.path_list_of_samples 	= os.path.join( self.path_samples, 'logical_file_names')
-		try:
-			self.path_preselected_samples = configuration['paths']['preselection_directory']
-		except Exception, e:
-			self.path_preselected_samples = self.path_samples + '_preselection'
+		self.path_preselected_samples = configuration['paths']['path_samples_preselection']
 
 		# ------ Samples -------
 		if sample == None:

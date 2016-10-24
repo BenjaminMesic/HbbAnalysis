@@ -62,10 +62,6 @@ class PlotTool(object):
 		# Load plot style, defined in tdrStyle.py
 		tdrStyle.tdrStyle()
 
-		# # Load VHbbNameSpace.h
-		# ROOT.gROOT.ProcessLine(".L ../utility/VHbbNameSpace.h")
-		# # print ROOT.VHbb.deltaPhi(1,2)
-
 		# ------ Paths -------
 		self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
 		self.path_plots			= os.path.join( self.path_working_directory, 'plots', analysis_name)
@@ -103,7 +99,7 @@ class PlotTool(object):
 		MiscTool.Print('analysis_info', 'Location of samples:', self.path_plots)
 		MiscTool.Print('analysis_info_list', 'Plot options:', self.plot_options.values())
 
-	# ------ Plot functions -------
+
 	def set_variables(self):
 		
 		MiscTool.Print('python_info', '\nCalled get_variables function.')
@@ -117,10 +113,8 @@ class PlotTool(object):
 
 		# Histograms will be saved in new root file
 		_output_name = os.path.join(self.path_plots, self.task + '.root')
-		_output = ROOT.TFile.Open( _output_name,'recreate')
+		_output = ROOT.TFile.Open( _output_name, 'recreate')
 		_output.Close()
-
-		_counter = {}
 
 		# # Loop over all samples
 		for _s in self.sample_tool.samples:
@@ -130,21 +124,18 @@ class PlotTool(object):
 			# Loop over all variables for each sample
 			for _var in self.plot_options['variables']:
 
-				_name =  _var + '-' + _s
+				_name =  '__'.join([ _var, _s]) 
 
 				# Histogram plot options
 				_nbin 	= self.plot_options['variables'][_var]['n_bin']
 				_x_min 	= self.plot_options['variables'][_var]['x_min']
 				_x_max 	= self.plot_options['variables'][_var]['x_max']
 
-				# # Check if sample is data or mc
-				# _sample_name = self.samples_for_plot[_id]
-				# _sample_type = self.samples_all[_sample_name]['types']
-
 				# Open tree and create histogram
 				_input = ROOT.TFile.Open( _f,'read')
 				_tree = _input.Get('tree')
-				_histogram = ROOT.TH1D( _name, _name, _nbin, _x_min, _x_max)
+				_histogram = ROOT.TH1F( _name, _name, _nbin, _x_min, _x_max)
+				_histogram.SetFillColor(0)
 
 				# Fill histograms event by event
 				if self.event_by_event:
@@ -161,25 +152,21 @@ class PlotTool(object):
 
 						_tree.GetEntry(_ev)
 
-						# print  '\n'
-						# print 'Event number:', _ev
+						print  '\n', 'Event number:', _ev
 
 				# Or by using Draw Function
 				else:
+					
 					MiscTool.Print('status', '\nFill histogram directly from tree.')
 
 					_number_of_entries = _tree.GetEntriesFast()
 					MiscTool.Print('analysis_info', 'Sample:', _s)
 					MiscTool.Print('analysis_info', '# entries (skimmed tree): ', _number_of_entries)
 
-		 			# Weights part
+		 			# Weights and scale factor part
 					_weight = '1'
-					if self.sample_tool.samples[_s].types != 'data':
-						_weight = '*'.join(self.weights.values())
-
-					# Scale factors part
 					if self.sample_tool.samples[_s].types == 'mc':
-						_weight = _weight + '*' + self.sample_tool.samples[_s].normalization_factor
+						_weight = '*'.join(self.weights.values()) + '*' + self.sample_tool.samples[_s].normalization_factor
 
 					# ---- Explanation of weight as Draw parameter ----
 					# Selection = "weight *(boolean expression)"
@@ -190,21 +177,6 @@ class PlotTool(object):
 					# Get histogram from the tree directly
 					_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
 
-
-				# Histograms plot options
-				if self.sample_tool.samples[_s].types == 'data':
-					_histogram.SetMarkerStyle(20)
-					_histogram.SetMarkerColor(self.plot_definitions['colors'][_s])
-				else:
-					_histogram.SetFillColor(self.plot_definitions['colors'][_s])
-					_histogram.SetLineColor(self.plot_definitions['colors'][_s])
-
-
-				# c = ROOT.TCanvas('c', 'c', 800, 800)
-				# _histogram.Draw('p')
-				# _histogram.SetTitle(_name)
-				# c.SaveAs(_name + '_.pdf')
-
 				# Save histograms to new root file
 				_output = ROOT.TFile.Open( _output_name, 'update')
 				_histogram.Write()
@@ -212,7 +184,7 @@ class PlotTool(object):
 
 				_input.Close()
 
-	def get_histograms(self):
+	def get_and_prepare_histograms(self):
 
 		MiscTool.Print('python_info', '\nCalled get_histograms function.')
 
@@ -231,7 +203,24 @@ class PlotTool(object):
 
 		while _key:
 			self.histograms[_key.GetName()] = _file.Get(_key.GetName())
+			self.histograms[_key.GetName()].SetDirectory(0)
+
+			_s = _key.GetName().split('__')[1]
+
+			# Histograms plot options
+			if self.sample_tool.samples[_s].types == 'data':
+				self.histograms[_key.GetName()].SetMarkerStyle(20)
+				self.histograms[_key.GetName()].SetMarkerColor(self.plot_definitions['colors'][_s])
+			else:
+				self.histograms[_key.GetName()].SetFillColor(self.plot_definitions['colors'][_s])
+				self.histograms[_key.GetName()].SetLineColor(self.plot_definitions['colors'][_s])
+
 			_key = iter.Next()
+
+		# c = ROOT.TCanvas('c', 'c', 800, 800)
+		# _histogram.Draw('p')
+		# _histogram.SetTitle(_name)
+		# c.SaveAs(_name + '_.pdf')
 
 	def set_histograms_stack(self, variable):
 
@@ -247,10 +236,10 @@ class PlotTool(object):
 		for _s in self.sample_tool.samples:
 
 			_type = self.sample_tool.samples[_s].types
-			_stack_name 	= variable + '-' + _type + '-stack'
-			_ratio_name 	= variable + '-' + _type + '-ratio'
+			_stack_name 	= '__'.join([variable, _type, 'stack'])
+			_ratio_name 	= '__'.join([variable, _type, 'ratio'])
 
-			# Store samples in order histogram list
+			# Store samples in ordered histogram list
 			_ordered_histograms[_type].append(_s)
 
 			# Create stack histograms (same stack many times but it is ok)
@@ -268,9 +257,9 @@ class PlotTool(object):
 			# Loop over all histograms
 			for _n,_o in enumerate(_o_list):
 
-				_stack_name 	= variable + '-' + _t + '-stack'
-				_ratio_name 	= variable + '-' + _t + '-ratio'
-				_histogram_name = variable + '-' + _o
+				_stack_name 	= '__'.join([variable, _t, 'stack'])
+				_ratio_name 	= '__'.join([variable, _t, 'ratio'])
+				_histogram_name = '__'.join([variable, _o])
 
 				# all data sample histograms are transparent except the last one
 				# print _t, _n, _o, _stack_name, _histogram_name
@@ -282,17 +271,17 @@ class PlotTool(object):
 				self.histograms_ratio[_ratio_name].Add(self.histograms[_histogram_name] )
 
 		# ------ Draw Stacks ------- 
-		# Very compact way for draw options
+		# Very compact way for the drawing options
 		_draw_options = {
-			variable + '-mc-stack'	: '',
-			variable + '-data-stack': 'hist p'
+			'__'.join([variable, 'mc', 'stack'])	: '',
+			'__'.join([variable, 'data', 'stack']): 'hist p'
 			}
 
 		_draw_type = map(str, set(_draw_options) & set(self.histograms_stack))
 
 		# if there are both mc and data plot data on top of it
 		if  _draw_options.keys() == _draw_type:
-			_draw_options[variable + '-data-stack'] += ' same'
+			_draw_options['__'.join([variable, 'data', 'stack'])] += ' same'
 
 		# Draw loop
 		for _t in sorted(_draw_type, reverse=True):
@@ -307,11 +296,11 @@ class PlotTool(object):
 			self.histograms_stack[_t].GetYaxis().SetTitleFont(43)
 			self.histograms_stack[_t].GetYaxis().SetTitleOffset(1.55)
 
-			self.histograms_stack[_t].GetYaxis().SetLabelSize(0.)
-			_axis = ROOT.TGaxis( -5, 20, -5, 220, 20,220,510,"")
-			_axis.SetLabelFont(43) # Absolute font size in pixel (precision 3)
-			_axis.SetLabelSize(15)
-			_axis.Draw()
+			# self.histograms_stack[_t].GetYaxis().SetLabelSize(0.)
+			# _axis = ROOT.TGaxis( -5, 20, -5, 220, 20,220,510,"")
+			# _axis.SetLabelFont(43) # Absolute font size in pixel (precision 3)
+			# _axis.SetLabelSize(15)
+			# _axis.Draw()
 
 	def set_histograms_ratio(self, variable):
 
@@ -325,11 +314,10 @@ class PlotTool(object):
 		# ------ Draw Ratio ------- 
 		self.pads['ratio_pad'].cd()
 
+		if '__'.join([variable, 'data', 'ratio']) in self.histograms_ratio.keys() and '__'.join([variable, 'mc', 'ratio']) in self.histograms_ratio.keys():
 
-		if variable + '-data-ratio' in self.histograms_ratio.keys() and variable + '-mc-ratio' in self.histograms_ratio.keys():
-
-			_ratio_histogram = self.histograms_ratio[variable + '-data-ratio'].GetStack().Last()
-			_mc_histogram = self.histograms_ratio[variable + '-mc-ratio'].GetStack().Last()
+			_ratio_histogram = self.histograms_ratio['__'.join([variable, 'data', 'ratio'])].GetStack().Last()
+			_mc_histogram = self.histograms_ratio['__'.join([variable, 'mc', 'ratio'])].GetStack().Last()
 
 			_ratio_histogram.Divide(_mc_histogram)
 
@@ -393,7 +381,7 @@ class PlotTool(object):
 		_additional_dict = {}
 		for _s in self.sample_tool.samples:
 			if _legend_dictionary[_s] == 'Data':
-			 	if self.histograms[variable + '-' + _s].GetMarkerSize() > 1.0:
+			 	if self.histograms['__'.join([variable, _s])].GetMarkerSize() > 1.0:
 					_additional_dict[_legend_dictionary[_s]] = _s
 			else:
 				_additional_dict[_legend_dictionary[_s]] = _s
@@ -410,12 +398,12 @@ class PlotTool(object):
 			_id = _additional_dict[_l]
 
 			if _l == 'Data':
-				self.legends['stack_legend'].AddEntry( self.histograms[variable + '-' + _id], _l, 'p')
+				self.legends['stack_legend'].AddEntry( self.histograms['__'.join([variable, _id])], _l, 'p')
 			else:
-				self.legends['stack_legend'].AddEntry( self.histograms[variable + '-' + _id], _l, 'f')
+				self.legends['stack_legend'].AddEntry( self.histograms['__'.join([variable, _id])], _l, 'f')
 
 		# if there is MC sample add
-		if variable + '-mc-ratio' in self.histograms_ratio.keys():	
+		if '__'.join([variable, 'mc', 'ratio']) in self.histograms_ratio.keys():	
 			# Add error graph
 			self.legends['stack_legend'].AddEntry(self.graphs_error['stack_error'],"MC uncert. (stat.)","fl")
 		else:
@@ -427,10 +415,10 @@ class PlotTool(object):
 
 		MiscTool.Print('python_info', '\nCalled set_graphs_errors function.')
 
-		if variable + '-mc-ratio' in self.histograms_ratio.keys():
+		if '__'.join([variable, 'mc', 'ratio']) in self.histograms_ratio.keys():
 
 			# There are two plots: histogram and ratio. Each one needs its error graph		
-			_stack_name = variable + '-mc-stack'
+			_stack_name = '__'.join([variable, 'mc', 'stack'])
 			_stack_mc = self.histograms_stack[_stack_name].GetStack().Last().Clone()
 
 			self.pads['stack_pad'].cd()
@@ -476,8 +464,7 @@ class PlotTool(object):
 		self.labels['cms'] = self.myText("CMS",0.17,0.88,1.04)
 		_lumi 	= float(self.general_options['luminosity']/1000.0)
 		_tag 	= self.general_options['tag']
-		self.labels['lumi'] = self.myText('#sqrt{{s}} = {0}, L = {1} fb^{{-1}}'.format(_tag, _lumi ),0.17,0.83)
-		# _label_add_flag = self.myText(_add_flag,0.17,0.78)		
+		self.labels['lumi'] = self.myText('#sqrt{{s}} = {0}, L = {1} fb^{{-1}}'.format(_tag, _lumi ),0.17,0.83)	
 
 	def set_canvas(self,v):
 

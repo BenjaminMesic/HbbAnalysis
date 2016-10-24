@@ -46,7 +46,7 @@ class CopyTool(object):
 		
 		# ------ Paths -------
 		self.path_working_directory  = os.environ['Hbb_WORKING_DIRECTORY']
-		self.path_output_directory   = configuration['paths']['samples_directory']
+		self.path_output_directory   = configuration['paths']['path_samples']
 		self.path_logical_file_names = os.path.join( self.path_output_directory, 'logical_file_names')
 
 		# ------ Copy options -------
@@ -67,7 +67,7 @@ class CopyTool(object):
 
 		MiscTool.Print('python_info', '\nCalled wrapper_gfal_ls function.')
 
-		_command = ['gfal-ls'] #,'-Hl']
+		_command = ['gfal-ls', '-l'] #,'-Hl']
 		_command.append('srm:/' + location)
 
 		MiscTool.Print('python_info', 'Command: ' + ' '.join(_command))
@@ -89,24 +89,21 @@ class CopyTool(object):
 			# get one path
 			_x = _paths.get()
 
-			# if .tar.gz in name skip
-			if '.tar.gz' in _x:
-				continue
-
 			# do ls
 			_y = self.wrapper_gfal_ls( _x )
 
-			# maybe problematic part
-			if _x in _y:
+			for _p in _y.splitlines():
+				
+				_type = _p[0]
+				_name = _p.split(' ')[-1].rstrip()
 
-				# if ls gets you the same result as input you are done
-				_logical_file_names.append(_x)
+				# If this particular ls result is directory, put in ls queue
+				if _type == 'd':
+					_paths.put( os.path.join(_x, _name))
 
-			else:
-				# go deeper in the folder
-				for _p in _y.splitlines():
-					_paths.enqueue( os.path.join(_x, _p))
-
+				# Else just store in list
+				else:
+					_logical_file_names.append(_x)
 
 		return _logical_file_names
 
@@ -130,7 +127,7 @@ class CopyTool(object):
 		# Loop over all locations from which you are copying files
 		for _l in self.list_of_locations:
 			_path = os.path.join( self.list_of_storage_elements[_l], self.list_of_locations[_l])
-			
+
 			# execute ls command
 			for _s in self.wrapper_gfal_ls( _path ).splitlines():
 				self.list_of_samples_from_sources[_s] = _l

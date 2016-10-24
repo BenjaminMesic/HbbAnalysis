@@ -1,4 +1,4 @@
-from utility import MiscTool, SampleTool, ControlRegionTool
+from utility import MiscTool, SampleTool, DataCardTool
 
 if __name__ == '__main__':
 
@@ -11,7 +11,7 @@ if __name__ == '__main__':
 	configuration = MiscTool.get_configuration_files(analysis_name)
 
 	# Task tells which config options to choose
-	task = 'control_region_test'
+	task = 'datacards'
 
 	# ----------- Initialize samples ----------------
 	# Decide if you want to split samples on subsamples
@@ -20,5 +20,8 @@ if __name__ == '__main__':
 	sample_tool = SampleTool.SampleTool( task, configuration, split_samples)
 
 	# ----------- Here starts task ----------------
-	c = ControlRegionTool.ControlRegionTool( task, analysis_name, configuration, sample_tool)
+	c = DataCardTool.DataCardTool( task, analysis_name, configuration, sample_tool)
+
+	c._set_observations_and_rates()
+	# c.make_all()
 

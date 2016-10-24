@@ -58,21 +58,20 @@ class TreeTool(object):
 			return _status
 
 	@staticmethod
-	def trim_tree(cut, input_file, ID, forceReDo=False):
+	def trim_tree(cut, input_file, ID, path_cache, forceReDo=False):
 		''' Create and return cached tree'''
 
 		MiscTool.Print('python_info', '\nCalled trim_tree function.')
 
 		# Set location of files
-		_path = '/'.join(input_file.split('/')[:-1])
-		_path_cache = os.path.join( _path, 'cache')
+		_path_cache = path_cache
 		MiscTool.make_directory(_path_cache)
 
 		# output file name based on md5 of complete cut for this sample
 		_unique_name = hashlib.md5(cut).hexdigest()
 		_output_file = os.path.join( _path_cache, ID + '_' + _unique_name + '.root' )
 
-		MiscTool.Print('status', 'Output file: ', _output_file)
+		MiscTool.Print('analysis_info', 'Output file:', _output_file)
 		MiscTool.Print('analysis_info', 'ID:', ID)
 		MiscTool.Print('analysis_info', 'Input_file:', input_file)
 		MiscTool.Print('analysis_info', 'Cut:', cut)

@@ -8,6 +8,7 @@
 		'preselection'			: ['all'],
 		'control_region_test'	: ['SE', 'SM', 'WH', 'TT', 'WJets_light'],
 		'signal_region' 		: ['SE', 'SM', 'WH', 'TT', 'WJet100', 'QCD100', 'QCD200', 'QCD300', 'QCD500', 'QCD700', 'QCD1000', 'QCD1500', 'QCD2000'],
+		'datacards' 			: ['SE', 'SM', 'WH', 'ZH', 'WJets', 'TT']
 	},
 
 

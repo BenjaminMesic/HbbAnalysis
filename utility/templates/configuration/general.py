@@ -8,9 +8,9 @@
 
 	'locations' 	: {
 		'psi' : 'store/user/perrozzi/VHBBHeppyV24bis',
-		'pisa':	'store/user/arizzi/VHBBHeppyV24'		
+		'pisa':	'store/user/arizzi/VHBBHeppyV24',		
 	},
 
-	'luminosity': 12.9,
+	'luminosity': 12900, # pb-1
 	'tag' : '13TeV'
 }

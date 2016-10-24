@@ -15,14 +15,17 @@ class SampleTool(object):
 		self.configuration 		= configuration
 		self.split_samples		= split_samples
 
+		# ------ Paths -------
+		self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
 		self.list_of_all_samples= self.configuration['samples']['list']
 		self.list_of_samples 	= self.configuration['samples']['task'][self.task]
-		self.path_samples 		= self.configuration['paths']['preselection_directory']
-
-		self.samples 			= {}
+		self.path_samples 		= self.configuration['paths']['path_samples_preselection']
 
 		# Load VHbbNameSpace.h
-		ROOT.gROOT.ProcessLine(".L ../utility/VHbbNameSpace.h")
+		ROOT.gROOT.ProcessLine('.L {0}/utility/VHbbNameSpace.h'.format(self.path_working_directory))
+		# print ROOT.VHbb.deltaPhi(1,2)
+
+		self.samples 			= {}
 
 		# First you need to initalize samples
 		self.initialize_samples()
@@ -140,15 +143,15 @@ class SampleTool(object):
 			if isinstance(_task_cut, dict):
 
 				for _tc in _task_cut:
-					_id = '_'.join([_s, _tc])
+					_id = '___'.join([_s, _tc])
 					self.samples[_s].files[_id] = {'ID': _id, 'cut': _task_cut[_tc]}
 
 			elif isinstance(_task_cut, str):
 				self.samples[_s].files[_s] = {'ID': _s, 'cut': _task_cut}
 
 			# ----- Add default cut ------
-			for _f in self.samples[_s].files:
-				self.samples[_s].files[_f]['cut'] += ' && ' + _default_cut
+			for _id in self.samples[_s].files:
+				self.samples[_s].files[_id]['cut'] += ' && ' + _default_cut
 
 			# ----- Add subsample cut -----
 			_id_subsample = _s.split('_')
@@ -156,8 +159,8 @@ class SampleTool(object):
 			if len(_id_subsample) != 1:
 			
 				if _id_subsample[1] in _subsamples_cut:
-					for _f in self.samples[_s].files:
-						self.samples[_s].files[_f]['cut'] += ' && ' + _subsamples_cut[_id_subsample[1]]
+					for _id in self.samples[_s].files:
+						self.samples[_s].files[_id]['cut'] += ' && ' + _subsamples_cut[_id_subsample[1]]
 				else:
 					MiscTool.Print('error', 'Missing "{0}" subsamples cut definition'.format(_id_subsample[1]))
 		
@@ -168,15 +171,15 @@ class SampleTool(object):
 		for _s in self.samples:
 
 			# Set parent file (input) for this sample
-			self.samples[_s].file_parrent = os.path.join(self.path_samples, self.samples[_s].name + '.root')
+			self.samples[_s].file_parent = os.path.join(self.path_samples, self.samples[_s].name + '.root')
 
-			for _f in self.samples[_s].files:
+			for _id in self.samples[_s].files:
 
-				_cut 	= self.samples[_s].files[_f]['cut']
-				_id 	= self.samples[_s].files[_f]['ID']
+				_cut 	= self.samples[_s].files[_id]['cut']
+				_ID 	= self.samples[_s].files[_id]['ID']
 
 				# Set samples i.e. root files for study
-				self.samples[_s].files[_f]['tree'] = TreeTool.TreeTool.trim_tree( _cut, self.samples[_s].file_parrent, _id)
+				self.samples[_s].files[_id]['tree'] = TreeTool.TreeTool.trim_tree( _cut, self.samples[_s].file_parent, _ID, self.configuration['paths']['path_cache'])
 
 	# This part is designed for PlotTool which works with only one cut defined in cuts.py
 	def set_samples_number_of_entries(self):
@@ -184,14 +187,14 @@ class SampleTool(object):
 		MiscTool.Print('python_info', '\nCalled set_samples_number_of_entries function.')
 
 		for _s in self.samples:
-			
-			_f = self.samples[_s].files[_s]['tree']
-
-			try:
-				_file 	= ROOT.TFile.Open( _f,'read')
-				self.samples[_s].number_of_entries = _file.Get('Count').GetEntries()
-				MiscTool.Print('analysis_info', _s + ' # entries', _file.Get('Count').GetEntries())
+					
+			try:		
+				
+				# Get total number of entries for this sample
+				_file 	= ROOT.TFile.Open( self.samples[_s].file_parent,'read')
+				self.samples[_s].number_of_all_entries = _file.Get('CountFullWeighted').GetBinContent(1)					
 				_file.Close()
+			
 			except Exception, e:
 				MiscTool.Print('error', 'Problem with loading: ' + _f)
 				raise
@@ -206,7 +209,7 @@ class SampleTool(object):
 
 			if self.samples[_s].types == 'mc':
 				_x_sec	= self.samples[_s].xsec
-				self.samples[_s].normalization_factor  = str(_luminosity*_x_sec/self.samples[_s].number_of_entries)
+				self.samples[_s].normalization_factor  = str(_luminosity*_x_sec/self.samples[_s].number_of_all_entries)
 			else:
 				self.samples[_s].normalization_factor  = str(1.0)
 
@@ -223,7 +226,7 @@ class Sample(object):
 		self.types 				= types
 		self.xsec 				= xsec
 
-		self.file_parrent 			= None		
+		self.file_parent 			= None		
 		self.files					= {}	# 'ID': '', 'cut':'', 'tree':''
-		self.number_of_entries  	= None
+		self.number_of_all_entries  = None
 		self.normalization_factor 	= None
