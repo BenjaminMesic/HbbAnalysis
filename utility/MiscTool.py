@@ -51,6 +51,9 @@ def get_configuration_files(analysis_name):
 
 	for _c in _files:
 
+		if '~' in _c:
+			continue
+
 		Print('analysis_info', '', _c)
 
 		try:

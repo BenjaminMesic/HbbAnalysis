@@ -161,7 +161,7 @@ class PlotTool(object):
 
 					_number_of_entries = _tree.GetEntriesFast()
 					MiscTool.Print('analysis_info', 'Sample:', _s)
-					MiscTool.Print('analysis_info', '# entries (skimmed tree): ', _number_of_entries)
+					MiscTool.Print('analysis_info', '# entries: ', _number_of_entries)
 
 		 			# Weights and scale factor part
 					_weight = '1'
@@ -177,7 +177,7 @@ class PlotTool(object):
 					# Get histogram from the tree directly
 					_tree.Draw('{0}>>{1}'.format( _var, _name), _weight)
 
-					MiscTool.Print('analysis_info', 'Expected yields (skimmed tree): ', _histogram.Integral())
+					MiscTool.Print('analysis_info', 'Expected yields: ', _histogram.Integral())
 
 
 				# Save histograms to new root file
