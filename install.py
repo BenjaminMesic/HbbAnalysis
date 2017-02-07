@@ -10,19 +10,19 @@ if __name__ == '__main__':
 	# ----------------------------------------------------
 	
 	# This will be stored in configuration files after they are created, you can modify config files at any time
-	analysis_name 	= 'Wlv'
-	path_samples 	= '/STORE/Hbb/2016_10_VHBBHeppyV24'
+	analysis_name 	= 'Wlv' 
+	path_samples 	= '/STORE/Hbb/2017_01_VHBBHeppyV24'
 	path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
 
 	paths = {
 		'path_samples'					: path_samples,
 		'path_samples_preselection' 	: '_'.join([path_samples, analysis_name, 'preselection']),
-		'path_samples_modified' 		: '_'.join([path_samples, analysis_name, 'modified']),
 		'path_cache' 					: '_'.join([path_samples, analysis_name, 'cache']),
 		'path_configuration'			: os.path.join( path_working_directory, 'configuration', analysis_name),
 		'path_plots'					: os.path.join( path_working_directory, 'plots', analysis_name),
 		'path_results'					: os.path.join( path_working_directory, 'results', analysis_name),
-		'path_extra'					: os.path.join( path_working_directory, 'extra', analysis_name)
+		'path_extra'					: os.path.join( path_working_directory, 'extra', analysis_name),
+		'path_external'					: os.path.join( path_working_directory, 'external', analysis_name)
 	}
 
 	# ----------------------------------------------------
@@ -32,7 +32,6 @@ if __name__ == '__main__':
 	print '{0:35s}{1}'.format('path_working_directory:', path_working_directory)
 	print '{0:35s}{1}'.format('path_samples:', path_samples)
 	print '{0:35s}{1}'.format('path_samples_preselection:', paths['path_samples_preselection'])
-	print '{0:35s}{1}'.format('path_samples_modified:', paths['path_samples_modified'])
 	print '{0:35s}{1}'.format('path_cache:', paths['path_cache'])
 
 	# ------------ Setup location of samples, code structure, etc.... -----------------
@@ -70,7 +69,6 @@ if __name__ == '__main__':
 		newText=f.read().\
 				replace('<path_samples>', path_samples).\
 				replace('<path_samples_preselection>', paths['path_samples_preselection']).\
-				replace('<path_samples_modified>', paths['path_samples_modified']).\
 				replace('<path_cache>', paths['path_cache'])
 
 
