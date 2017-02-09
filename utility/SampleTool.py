@@ -17,6 +17,7 @@ class SampleTool(object):
     self.task             = task
     self.configuration    = configuration
     self.split_samples    = split_samples
+    self.variables        = configuration['variables']
 
     # ------ Paths -------
     self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
@@ -48,7 +49,7 @@ class SampleTool(object):
     self.set_samples_number_of_all_events()
     # Set the normalization factor for each sample
     self.set_samples_normalization_factor()
-    # 
+    # Set weights
     self.set_samples_weight_expression()
 
   def load_weight_C_functions(self):
@@ -158,9 +159,9 @@ class SampleTool(object):
   def set_samples_cuts(self):
     '''Set samples cuts and IDs.'''
 
-    _default_cut  = self.configuration['cuts']['blinding_cut']
+    _default_cut    = self.configuration['cuts']['blinding_cut']
     _subsamples_cut = self.configuration['cuts']['subsamples_cut'] 
-    _task_cut     = self.configuration['cuts'][self.task] 
+    _task_cut       = self.configuration['cuts'][self.task] 
 
     for _s in self.samples:
 
@@ -196,9 +197,10 @@ class SampleTool(object):
     for _s in self.samples:
 
       # Set parent file (input) for this sample
-      _checksum_variables = hashlib.md5('_'.join(self.configuration['variables'])).hexdigest() 
-      _path_boosted_file  = os.path.join( self.path_cache, '_'.join(['boost', _checksum_variables, _file]))
-      _path_old_file      = os.path.join(self.path_samples, self.samples[_s].name + '.root')
+      _file               = self.samples[_s].name + '.root'
+      _checksum_variables = hashlib.md5('_'.join(self.variables['variables'])).hexdigest() 
+      _path_boosted_file  = os.path.join(self.path_cache, '_'.join(['boost', _checksum_variables, _file]))
+      _path_old_file      = os.path.join(self.path_samples, _file)
 
       # Check whether boosted tree exists
       if TreeTool.TreeTool.check_if_tree_ok(_path_boosted_file) and self.boosted_trees:
@@ -206,7 +208,7 @@ class SampleTool(object):
         self.samples[_s].file_parent = _path_boosted_file
 
       else:
-        MiscTool.Print('status', '\nCreating boosted tree from {0}'.format(_path_file))
+        MiscTool.Print('status', '\nUsing old tree {0}'.format(_path_old_file))
         self.samples[_s].file_parent = _path_old_file
 
       for _id in self.samples[_s].files:
@@ -286,13 +288,13 @@ class Sample(object):
 
   def __init__(self, name, ID, types, xsec):
 
-    self.name         = name
-    self.ID         = ID
-    self.types        = types
-    self.xsec         = xsec
+    self.name             = name
+    self.ID               = ID
+    self.types            = types
+    self.xsec             = xsec
 
-    self.file_parent      = None    
-    self.files          = {}  # 'ID': '', 'cut':'', 'tree':''
+    self.file_parent            = None    
+    self.files                  = {}  # 'ID': '', 'cut':'', 'tree':''
     self.number_of_all_events   = None
     self.normalization_factor   = None
-    self.weight_expression    = None
+    self.weight_expression      = None
