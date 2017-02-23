@@ -40,65 +40,13 @@
             + '((abs(vLeptons_pdgId[0]) == 11 && vLeptons_relIso03[0] < 0.15) || '
             + '((abs(vLeptons_pdgId[0]) == 13 && vLeptons_relIso04[0] < 0.06)) )',
 
-  'BooST'     :   'Sum$( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5 ) > 0' + ' && '
-            + 'Sum$(aLeptons_pt > 30 && abs(aLeptons_eta) < 2.5 && aLeptons_relIso03 < 0.1) == 0' + ' && '
-            + 'Sum$(vLeptons_pt > 30 && vLeptons_looseIdPOG) == 1' + ' && '
-            + 'V_pt > 200',
-            # + 'met_pt > 30 && '
-            # + 'GenHiggsBoson_pt[0]>300 && '
-
-            # 'deltaPhi(V_phi, FatjetAK08ungroomed_phi[0]) > 2.5 && ',
-            # 'deltaPhi(V_phi, FatjetAK08ungroomed_phi[0]) > 2.5 && ' 
-
-            # + 'nFatjetAK08ungroomed != 0 && '
-            # + 'FatjetAK08ungroomed_pt[0] > 300',
-            # + 'FatjetAK08ungroomed_mass[0] > 100',
-            # + 'FatjetAK08ungroomed_bbtag[0] > 0.0',
-
-  # 'boost_bkg_estimate':
-  #           #'Sum$( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0]) > 0.5 && FatjetAK08ungroomed_bbtag > 0.4) > 0' + ' && '
-  #           # + 'Sum$(aLeptons_pt > 30 && abs(aLeptons_eta) < 2.5 && aLeptons_relIso03 < 0.1) == 0' + ' && '
-  #           # + 'Sum$(vLeptons_pt > 30 && vLeptons_looseIdPOG) == 1' + ' && '
-  #           'nFatjetAK08ungroomed != 0' + ' && '
-  #           + 'nvLeptons != 0' + ' && '
-  #           + 'vLeptons_pt[0] > 200' + ' && '
-  #           + '1 < deltaR( FatjetAK08ungroomed_eta[0], FatjetAK08ungroomed_phi[0], vLeptons_eta[0], vLeptons_phi[0])'  + ' && '
-  #           + '4 > deltaR( FatjetAK08ungroomed_eta[0], FatjetAK08ungroomed_phi[0], vLeptons_eta[0], vLeptons_phi[0])'  + ' && '
-  #           + 'V_pt > 350' + ' && '
-  #           + 'FatjetAK08ungroomed_mass[0]>100' + ' && ' 'FatjetAK08ungroomed_mass[0]<155' + ' && '
-  #           + 'FatjetAK08ungroomed_bbtag[0]>0.9' + ' &&' 
-  #           + 'deltaPhi( V_phi, FatjetAK08ungroomed_phi[0]) > 3.0',
-
-  'boost_bkg_estimate': ' 110 <FatjetAK08ungroomed_mass[boost_FatJet_index_max_bb] && FatjetAK08ungroomed_mass[boost_FatJet_index_max_bb] < 150',
-            #'Sum$( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0]) > 0.5 && FatjetAK08ungroomed_bbtag > 0.4) > 0' + ' && '
-            # + 'Sum$(aLeptons_pt > 30 && abs(aLeptons_eta) < 2.5 && aLeptons_relIso03 < 0.1) == 0' + ' && '
-            # + 'Sum$(vLeptons_pt > 30 && vLeptons_looseIdPOG) == 1' + ' && '
-            # '(nFatjetAK08ungroomed == 1 || nFatjetAK08ungroomed == 2)' + ' && '
-            # + 'FatjetAK08ungroomed_pt[0] > 400' + ' && '
-            # + '(' 
-            #   + '('
-            #     + 'nFatjetAK08ungroomed == 1' + ' && ' 
-            #     # + 'deltaR( FatjetAK08ungroomed_eta[0], FatjetAK08ungroomed_phi[0], V_eta, V_phi) > 2.5' + ' && ' 
-            #     + 'FatjetAK08ungroomed_bbtag[0] > 0.7' + ' && ' 
-            #     + '110 < FatjetAK08ungroomed_mass[0] && FatjetAK08ungroomed_mass[0] < 150' 
-            #   + ')' + ' || '
-            #   + '(' 
-            #     +'nFatjetAK08ungroomed == 2' + ' && '
-            #     + '('
-            #       + '('
-            #         # + 'deltaR( FatjetAK08ungroomed_eta[0], FatjetAK08ungroomed_phi[0], V_eta, V_phi) > 2.5' + ' && '
-            #         + 'FatjetAK08ungroomed_bbtag[0] > 0.7 && 0.0 < FatjetAK08ungroomed_bbtag[1] && FatjetAK08ungroomed_bbtag[1] < 0.1' + ' && '
-            #         + '110 < FatjetAK08ungroomed_mass[0] && FatjetAK08ungroomed_mass[0] < 150 && 25 < FatjetAK08ungroomed_mass[1] && FatjetAK08ungroomed_mass[1] < 75'
-            #       + ')' + ' || '
-            #       + '('
-            #         # + 'deltaR( FatjetAK08ungroomed_eta[1], FatjetAK08ungroomed_phi[1], V_eta, V_phi) > 2.5' + ' && '
-            #         + 'FatjetAK08ungroomed_bbtag[1] > 0.7 && 0.0 < FatjetAK08ungroomed_bbtag[0] && FatjetAK08ungroomed_bbtag[0] < 0.1' + ' && '
-            #         + '110 < FatjetAK08ungroomed_mass[1] && FatjetAK08ungroomed_mass[1] < 150 && 25 < FatjetAK08ungroomed_mass[0] && FatjetAK08ungroomed_mass[0] < 75'
-            #       + ')'
-            #     + ')'
-            #   + ')'
-            # + ')',
-
+  'boost_bkg_estimate': 'boost_FatJet_index_max_bb != -9' + ' && '
+                        + 'FatjetAK08ungroomed_pt[boost_FatJet_index_max_bb] > 400' + ' && ' 
+                        + 'nFatjetAK08ungroomed != 0' + ' && '
+                        + 'nvLeptons != 0',
+                        # + 'FatjetAK08ungroomed_bbtag[boost_FatJet_index_max_bb] > 0.8' + ' && ' 
+                        # + '( boost_AK_index_maxCSV == -9 || (boost_AK_index_maxCSV != -9 && Jet_btagCSV[boost_AK_index_maxCSV] < 0.8))' + ' && '
+                        # + 'boost_n_AK04 < 2',
   # ----------------------------------
   # Datacards cuts 
   # ----------------------------------

@@ -12,8 +12,8 @@ if __name__ == '__main__':
 
   weight = WeightTool.WeightTool( analysis_name, configuration)
 
-  # # -------------- Setup C++ functions -------------------------
-  # weight.pile_up_handler()
+  # -------------- Setup C++ functions -------------------------
+  weight.pile_up_handler()
 
   # weight.scale_factor_muon_ID_handler()
   # weight.scale_factor_muon_iso_handler()
