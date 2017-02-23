@@ -2,37 +2,31 @@ from utility import MiscTool, PreselectionTool
 
 if __name__ == '__main__':
 
-	MiscTool.Print('python_info',  '\nStep 2: preselection.')
+  MiscTool.Print('python_info',  '\nStep 2: preselection.')
 
-	# Get analysis name, default is 'Wlv'
-	analysis_name = MiscTool.analysis_name()
+  # Get analysis name, default is 'Wlv'
+  analysis_name = MiscTool.analysis_name()
 
-	# Load all configuration files
-	configuration = MiscTool.get_configuration_files(analysis_name)
+  # Load all configuration files
+  configuration = MiscTool.get_configuration_files(analysis_name)
 
-	force_all = False
+  force_all = False
 
-	# Create instance of preselection class
-	p = PreselectionTool.PreselectionTool(analysis_name, configuration, force_all)
+  # Create instance of preselection class
+  p = PreselectionTool.PreselectionTool(analysis_name, configuration, force_all) #, 'WH_HToBB_WToLNu_M125_13TeV_amcatnloFXFX_madspin_pythia8')
 
-	# ---------------------------------
-	# Choose what you want to do
-	# ---------------------------------
+  # ---------------------------------
+  # Choose what you want to do
+  # ---------------------------------
 
-	# # Preselection
-	# p.preselection()
+  # # Preselection
+  # p.preselection()
 
-	# # Check root files
-	# for _s in configuration['samples']:
-	# 	try:
-	# 		p.check_root_preselected_files( _s + '_local.txt')
-	# 		print _s
+  # # Check preselected files, if you want only one sample add name in PreselectionTool
+  # p.check_root_preselected_files()
 
-	# 	except Exception, e:
-	# 		print 'Problem with {0}.'.format(_s)
+  # # Merge files
+  # p.merge()
 
-	# Check single root file
-	# p.check_root_preselected_files('SingleElectron_local.txt')
-
-	# # Merge files
-	# p.merge()
+  # # Create boosted trees
+  # p.create_boosted_trees()
