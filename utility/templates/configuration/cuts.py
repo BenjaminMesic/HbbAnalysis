@@ -42,11 +42,14 @@
 
   'boost_bkg_estimate': 'boost_FatJet_index_max_bb != -9' + ' && '
                         + 'FatjetAK08ungroomed_pt[boost_FatJet_index_max_bb] > 400' + ' && ' 
-                        + 'nFatjetAK08ungroomed != 0' + ' && '
-                        + 'nvLeptons != 0',
-                        # + 'FatjetAK08ungroomed_bbtag[boost_FatJet_index_max_bb] > 0.8' + ' && ' 
-                        # + '( boost_AK_index_maxCSV == -9 || (boost_AK_index_maxCSV != -9 && Jet_btagCSV[boost_AK_index_maxCSV] < 0.8))' + ' && '
-                        # + 'boost_n_AK04 < 2',
+                        # + 'nFatjetAK08ungroomed != 0' + ' && '
+                        # + 'nvLeptons != 0',
+                        + 'FatjetAK08ungroomed_bbtag[boost_FatJet_index_max_bb] > 0.8' + ' && ' 
+                        + '( boost_AK_index_maxCSV == -9 || (boost_AK_index_maxCSV != -9 && Jet_btagCSV[boost_AK_index_maxCSV] < 0.8))' + ' && '
+                        + 'boost_n_AK04 < 2' + ' && '
+                        + 'V_pt/FatjetAK08ungroomed_pt[boost_FatJet_index_max_bb] > 0.85' + ' && '
+                        + 'MaxIf$(Jet_ctagVsB, Jet_pt>30 && abs(Jet_eta)<2.4) < 0.2',
+
   # ----------------------------------
   # Datacards cuts 
   # ----------------------------------

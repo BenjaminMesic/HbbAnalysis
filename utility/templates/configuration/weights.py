@@ -7,11 +7,11 @@
   #   'weight' : 'btagWeightCSV'
   # },
   'pile_up'   : {
-    'samples': 'all_but_data',
-    'mc'  : '/users/bmesic/WorkingDirectory/2016_11_Hbb_test/CMSSW_7_4_16/src/HbbAnalysis/external/Wlv/weights/2016_11_PU_Gael_13fb/mcpu.root',
-    'data'  : '/users/bmesic/WorkingDirectory/2016_11_Hbb_test/CMSSW_7_4_16/src/HbbAnalysis/external/Wlv/weights/2016_11_PU_Gael_13fb/outputData.root',
-    'C'   : 'pile_up.h',
-    'weight': 'puWeight' # 'pile_up(nTrueInt)' # 
+    'samples' : 'all_but_data',
+    'mc'      : '/users/bmesic/WorkingDirectory/17_01_test_Hbb/CMSSW_7_4_16/src/HbbAnalysis/external/Wlv/weights/2016_11_PU_Gael_13fb/mcpu.root',
+    'data'    : '/users/bmesic/WorkingDirectory/17_01_test_Hbb/CMSSW_7_4_16/src/HbbAnalysis/external/Wlv/weights/2016_11_PU_Gael_13fb/outputData.root',
+    'C'       : 'pile_up.h',
+    'weight'  : 'puWeight' # 'pile_up(nTrueInt)' # 
   },
 
   # 'EWK_NLO_correction': {

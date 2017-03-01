@@ -38,161 +38,104 @@
     'split_samples'   : True,
     'boosted_trees'   : True,
     'event_by_event'  : False,
-    'sample_x100'     : ['WminusHPOWPYT', 'WplusHPOWPYT'],
+    'sample_x100'     : ['WminusHPOWPYT', 'WplusHPOWPYT'], #[], #
     'ratio_plot'      : 'Data_MC', #SigBkg
-    'ratio_plot_sig'  : ['WplusHPOWPYT', 'WminusHPOWPYT'],
+    'ratio_plot_sig'  : [], #['WplusHPOWPYT', 'WminusHPOWPYT'],
     'ratio_plot_bgk'  : ['TT'],
     'variables' :{
-      # 'rho' : {
-      #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 40
+      # 'FatjetAK08ungroomed_mpruned[boost_FatJet_index_max_bb]' : {
+      #   'n_bin' : 25,
+      #   'x_min' : 90,
+      #   'x_max' : 200
       # },
-      # 'deltaPhi(V_phi, FatjetAK08ungroomed_phi[0])' : {
-      #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 4
-      # },
-      'FatjetAK08ungroomed_mass[boost_FatJet_index_max_bb]' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 350
+      'FatjetAK08ungroomed_mprunedcorr[boost_FatJet_index_max_bb]' : {
+        'n_bin' : 25,
+        'x_min' : 90,
+        'x_max' : 160
       },
-      # 'FatjetAK08ungroomed_mass[1]' : {
-      #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 350
-      # },
-      # 'FatjetAK08ungroomed_pt[0]' : {
-      #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 800
-      # },
-      # 'naLeptons' : {
-      #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 3
-      # },
-      # 'vLeptons_pt[0]' : {
-      #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 500
+      # 'FatjetAK08ungroomed_mass[boost_FatJet_index_max_bb]' : {
+      #   'n_bin' : 25,
+      #   'x_min' : 90,
+      #   'x_max' : 200
       # },
       # 'V_pt' : {
       #   'n_bin' : 50,
-      #   'x_min' : 0,
-      #   'x_max' : 800
+      #   'x_min' : 100,
+      #   'x_max' : 600
       # },
-    } 
-  },
-
-  'BooST' :{
-    'variables' : {
-      # 'rho' : {
+      # 'vLeptons_pt[0]' : {
+      #   'n_bin' : 47,
+      #   'x_min' : 30,
+      #   'x_max' : 500
+      # },
+      # 'V_pt/FatjetAK08ungroomed_pt[boost_FatJet_index_max_bb]' : {
       #   'n_bin' : 50,
       #   'x_min' : 0,
-      #   'x_max' : 40
+      #   'x_max' : 2
       # },
-      # 'FatjetAK08ungroomed_bbtag[0]' : {
+      # 'MaxIf$(Jet_ctagVsL, Jet_pt>30 && abs(Jet_eta)<2.4)' : {
+      #   'n_bin' : 50,
+      #   'x_min' : -1,
+      #   'x_max' : 1      
+      # },
+      # 'MaxIf$(Jet_ctagVsB, Jet_pt>30 && abs(Jet_eta)<2.4)' : {
       #   'n_bin' : 50,
       #   'x_min' : -1,
       #   'x_max' : 1
       # },
-      # 'FatjetAK08ungroomed_mass[0]' : {
+      # 'deltaPhi(FatjetAK08ungroomed_phi[boost_FatJet_index_max_bb], V_phi)': {
+      #   'n_bin' : 50,
+      #   'x_min' : -3.14,
+      #   'x_max' : 3.14
+      # },
+      # 'Sum$(abs(GenTaus_motherId)==24)+10*nGenWZQuark + 5*nGenLepFromTop' :{
+      #   'n_bin' : 50,
+      #   'x_min' : 0.5,
+      #   'x_max' : 49.5
+      # },
+      # 'deltaR(FatjetAK08ungroomed_eta[boost_FatJet_index_max_bb], FatjetAK08ungroomed_phi[boost_FatJet_index_max_bb], GenHiggsBoson_eta, GenHiggsBoson_phi)' : {
       #   'n_bin' : 50,
       #   'x_min' : 0,
-      #   'x_max' : 300
+      #   'x_max' : 4
       # },
-      # 'FatjetAK08ungroomed_mass[1]' : {
+      # 'FatjetAK08ungroomed_tau3[boost_FatJet_index_max_bb]/FatjetAK08ungroomed_tau2[boost_FatJet_index_max_bb]' : {
       #   'n_bin' : 50,
       #   'x_min' : 0,
-      #   'x_max' : 300
+      #   'x_max' : 1
       # },
-      'FatjetAK08ungroomed_mass[0]' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 300
-      },
-      # ----------------- Lepton Plots ----------------
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])<0.5)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5)*FatjetAK08ungroomed_mass' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 300
-      },
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])<0.5)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5)'
-      + '*deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 3
-      },
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])<0.5)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5)'
-      + '*Iteration$' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 5
-      },
-      '( FatjetAK08ungroomed_pt < 200 || FatjetAK08ungroomed_bbtag < 0.4 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])<0.5)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && FatjetAK08ungroomed_bbtag > 0.4 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5)'
-      + '*FatjetAK08ungroomed_mass' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 300
-      },
-      '( FatjetAK08ungroomed_pt < 200 || FatjetAK08ungroomed_bbtag < 0.4 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])<0.5)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && FatjetAK08ungroomed_bbtag > 0.4 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5)'
-      + '*FatjetAK08ungroomed_pt' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 700
-      },
-      '( FatjetAK08ungroomed_pt < 200 || FatjetAK08ungroomed_bbtag < 0.4 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])<0.5)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && FatjetAK08ungroomed_bbtag > 0.4 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, vLeptons_eta[0], vLeptons_phi[0])>0.5)'
-      + '*V_pt' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 700
-      },  
-      # ----------------- Higgs Gen Plots ----------------
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])>0.1)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])<0.1)'
-      + '*FatjetAK08ungroomed_mass' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 300
-      },      
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])>0.1)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])<0.1)'
-      + '*Iteration$' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 3
-      },
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])>3.0)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])<3.0)'
-      + '*deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 3
-      },
-      '( FatjetAK08ungroomed_pt < 200 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])>0.1)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])<0.1)'
-      + '*FatjetAK08ungroomed_bbtag' : {
-        'n_bin' : 50,
-        'x_min' : -1,
-        'x_max' : 1
-      },
-      '( FatjetAK08ungroomed_pt < 200 || FatjetAK08ungroomed_bbtag < 0.4 || deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])>0.1)*(-999)'  + ' + '
-      + '( FatjetAK08ungroomed_pt > 200 && FatjetAK08ungroomed_bbtag > 0.4 && deltaR( FatjetAK08ungroomed_eta, FatjetAK08ungroomed_phi, GenHiggsBoson_eta[0], GenHiggsBoson_phi[0])<0.1)'
-      + '*FatjetAK08ungroomed_mass' : {
-        'n_bin' : 50,
-        'x_min' : 0,
-        'x_max' : 300
-      },          
-    }
-  },  
+      # 'GenWZQuark_pdgId' : {
+      #   'n_bin' : 24,
+      #   'x_min' : -6,
+      #   'x_max' : 6
+      # }, 
+      # 'GenWZQuark_pdgId*( deltaR(GenWZQuark_eta, GenWZQuark_phi, FatjetAK08ungroomed_eta[boost_FatJet_index_max_bb], FatjetAK08ungroomed_phi[boost_FatJet_index_max_bb]) < 0.8 )' + 
+      # '-9*( deltaR(GenWZQuark_eta, GenWZQuark_phi, FatjetAK08ungroomed_eta[boost_FatJet_index_max_bb], FatjetAK08ungroomed_phi[boost_FatJet_index_max_bb]) > 0.8 )' : {
+      #   'n_bin' : 24,
+      #   'x_min' : -6,
+      #   'x_max' : 6
+      # },
+      # 'nGenWZQuark' : {
+      #   'n_bin' : 12,
+      #   'x_min' : 0,
+      #   'x_max' : 6
+      # }, 
+      # 'nGenLepFromTop': {
+      #   'n_bin' : 12,
+      #   'x_min' : 0,
+      #   'x_max' : 6
+      # },
+      # 'GenLepFromTop_pdgId': {
+      #   'n_bin' : 32,
+      #   'x_min' : -16,
+      #   'x_max' : 16
+      # },
+      # 'nGenWZQuark + nGenLepFromTop' : {
+      #   'n_bin' : 12,
+      #   'x_min' : 0,
+      #   'x_max' : 6
+      # }
+    } 
+  },
 
   'definitions':{
     'legend': {
