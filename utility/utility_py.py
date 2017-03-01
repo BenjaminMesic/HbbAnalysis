@@ -22,6 +22,34 @@ def boost_FatJet_index_max_bb(tree):
     _dR     = ROOT.deltaR( _fj_eta, _fj_phi, _v_eta, _v_phi)
     _fj_pt  = tree.FatjetAK08ungroomed_pt[_n]
 
+    if _dR > 0.8 and _fj_pt > 200 and 95 < tree.FatjetAK08ungroomed_mprunedcorr[_n] < 155:
+      _jet_list[_n] = tree.FatjetAK08ungroomed_bbtag[_n]
+    else:
+      pass  
+
+  if len(_jet_list) == 0:
+    return -9.0
+  else:
+    return max( _jet_list, key=_jet_list.get)
+
+def boost_FatJet_index_max_bb_pruned(tree):
+
+  _jet_list = {}
+
+  if tree.nvLeptons == 0:
+    return -9
+
+  _v_eta  = tree.vLeptons_eta[0]
+  _v_phi  = tree.vLeptons_phi[0]
+
+  for _n in xrange(tree.nFatjetAK08ungroomed):
+
+    _fj_eta = tree.FatjetAK08ungroomed_eta[_n]
+    _fj_phi = tree.FatjetAK08ungroomed_phi[_n]
+
+    _dR     = ROOT.deltaR( _fj_eta, _fj_phi, _v_eta, _v_phi)
+    _fj_pt  = tree.FatjetAK08ungroomed_pt[_n]
+
     if _dR > 0.8 and _fj_pt > 200 and 95 < tree.FatjetAK08ungroomed_mpruned[_n] < 155:
       _jet_list[_n] = tree.FatjetAK08ungroomed_bbtag[_n]
     else:

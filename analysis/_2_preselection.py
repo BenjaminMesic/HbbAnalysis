@@ -28,5 +28,5 @@ if __name__ == '__main__':
   # # Merge files
   # p.merge()
 
-  # # Create boosted trees
-  # p.create_boosted_trees()
+  # Create boosted trees
+  p.create_boosted_trees()
