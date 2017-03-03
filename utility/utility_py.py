@@ -28,35 +28,7 @@ def boost_FatJet_index_max_bb(tree):
       pass  
 
   if len(_jet_list) == 0:
-    return -9.0
-  else:
-    return max( _jet_list, key=_jet_list.get)
-
-def boost_FatJet_index_max_bb_pruned(tree):
-
-  _jet_list = {}
-
-  if tree.nvLeptons == 0:
     return -9
-
-  _v_eta  = tree.vLeptons_eta[0]
-  _v_phi  = tree.vLeptons_phi[0]
-
-  for _n in xrange(tree.nFatjetAK08ungroomed):
-
-    _fj_eta = tree.FatjetAK08ungroomed_eta[_n]
-    _fj_phi = tree.FatjetAK08ungroomed_phi[_n]
-
-    _dR     = ROOT.deltaR( _fj_eta, _fj_phi, _v_eta, _v_phi)
-    _fj_pt  = tree.FatjetAK08ungroomed_pt[_n]
-
-    if _dR > 0.8 and _fj_pt > 200 and 95 < tree.FatjetAK08ungroomed_mpruned[_n] < 155:
-      _jet_list[_n] = tree.FatjetAK08ungroomed_bbtag[_n]
-    else:
-      pass  
-
-  if len(_jet_list) == 0:
-    return -9.0
   else:
     return max( _jet_list, key=_jet_list.get)
 
@@ -65,9 +37,9 @@ def boost_AK_index_maxCSV(tree):
   _index_FJ  = boost_FatJet_index_max_bb(tree)
 
   if _index_FJ == -9:
-    return -9.0
+    return -9
 
-  _index_AK  = -9.0
+  _index_AK  = -9
   _max_btagCSV = -9.0
 
   _fj_eta = tree.FatjetAK08ungroomed_eta[_index_FJ]
@@ -92,12 +64,12 @@ def boost_AK_index_maxCSV(tree):
 
 def boost_n_AK04(tree):
 
-  _counter = 0.0
+  _counter = 0
 
   _index_FJ  = boost_FatJet_index_max_bb(tree)
 
   if _index_FJ == -9:
-    return -9.0
+    return -9
 
   _fj_eta = tree.FatjetAK08ungroomed_eta[_index_FJ]
   _fj_phi = tree.FatjetAK08ungroomed_phi[_index_FJ]
@@ -114,3 +86,29 @@ def boost_n_AK04(tree):
       _counter += 1
 
   return _counter
+
+def boost_subjetak08_FatJet(tree):
+
+  fj_index = [-1]*10
+
+  for isj in xrange(tree.nSubjetAK08softdrop):
+
+    _sj_eta = tree.SubjetAK08softdrop_eta[isj]
+    _sj_phi = tree.SubjetAK08softdrop_phi[isj]
+
+    _dRMin = 100.
+    _index_fj = -1
+    for ifj in xrange(tree.nFatjetAK08ungroomed):
+
+      _fj_eta = tree.FatjetAK08ungroomed_eta[ifj]
+      _fj_phi = tree.FatjetAK08ungroomed_phi[ifj]
+
+      _dR = ROOT.deltaR( _fj_eta, _fj_phi, _sj_eta, _sj_phi)
+
+      if ( _dR < _dRMin and _dR < 1):
+        _dRMin = _dR
+        _index_fj = ifj
+
+    fj_index[isj] = _index_fj
+
+  return fj_index

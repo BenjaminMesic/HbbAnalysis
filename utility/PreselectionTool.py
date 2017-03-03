@@ -17,30 +17,13 @@ class PreselectionTool(object):
   Description:
   Preselection is used to apply preselection cut on all the samples
   and as a result we have smaller files with only events of our interest.
-  It gets list of all files from self.samples_path, apply preselection
-  and copy them in XXX. After that, merging of these files is done
-  so that we have only one file for each sample. Local batch system in 
-  Zagreb is used.
-
-  ----------- 
-
-  -----------
-  Parameters:
-
-  -----------
-  Functions:
-  preselection()
-
-
+  It gets list of all files, apply preselection
+  and copy them. After that, merging of these files is done
+  so that we have only one file for each sample.
 
   -----------
   Useful commands:
   limit maxproc 2048 - set if getting error with number of processes
-
-  -----------
-  To DO:
-
-
   ''' 
 
   def __init__(self, analysis_name, configuration, force_all, sample = None):
@@ -120,11 +103,11 @@ class PreselectionTool(object):
           continue
 
         _batch_arguments = {
-          '<initial_directory>' : _inital_directory,        # path to newly created batch script
-          '<input_file>'      : _file,              # file w/o presel
-          '<output_file>'     : _output_file,           # file w/ presel
-          '<cut>'         : self.preselection_cut,      # 'V_pt>100'
-          '<script_name>'     : _script_name.replace('.root',''), # 1401
+          '<initial_directory>' : _inital_directory,                # path to newly created batch script
+          '<input_file>'        : _file,                            # file w/o presel
+          '<output_file>'       : _output_file,                     # file w/ presel
+          '<cut>'               : self.preselection_cut,            # 'V_pt>100'
+          '<script_name>'       : _script_name.replace('.root',''), # 1401
           'python_template'     : os.path.join(self.path_batch_templates, 'preselection_batch_template.py')
         }
 
@@ -207,6 +190,7 @@ class PreselectionTool(object):
       except Exception, e:
         print 'Problem with {0}.'.format(_s)
 
+  # Boosted trees
   def create_boosted_trees(self):
 
     MiscTool.Print('python_info', '\nCalled create_boosted_trees function.')  
@@ -258,18 +242,35 @@ class PreselectionTool(object):
       # Leave only those branches you need
       for _b in self.variables['variables']:
 
-          if _b in _tree_list_of_branches:
-            _tree.SetBranchStatus(_b, 1)
-          else:
-            _additional_branches[_b] = array( 'f', [ 0. ] )
+        if _b in _tree_list_of_branches:
+          _tree.SetBranchStatus(_b, 1)
+
+        # Define your own
+        else:
+          _definition = self.variables['definition'][_b]
+          _default_value = -9
+ 
+          if _definition['type'] == 'f':
+            _default_value = 1.0*_default_value
+
+          _additional_branches[_b] = array( _definition['type'], _definition['size']*[ _default_value ] )
 
       # Copy entire tree with the branches from the config
       _new_tree = _tree.CloneTree(0)
 
       # Add your own branches
-      for _b,_type in _additional_branches.iteritems():
-        _new_tree.Branch( _b, _type, '{0}/F'.format(_b))
+      for _b,_array in _additional_branches.iteritems():
+
         MiscTool.Print('analysis_info', 'Adding new variable:', _b)
+
+        _definition = self.variables['definition'][_b]
+
+        if _definition['size'] == 1:
+          _b_type = _b
+        else:
+          _b_type = _b + '[{0}]'.format( _definition['size'])
+
+        _new_tree.Branch( _b, _array, '{0}/{1}'.format( _b_type, _definition['type'].upper()))
 
       # Fill the branches you've just added
       for _ii in xrange(_tree.GetEntriesFast()):
@@ -278,9 +279,21 @@ class PreselectionTool(object):
         _tree.GetEntry(_ii)
 
         # Calculate values
-        for _b, _type in _additional_branches.iteritems():
+        for _b, _array in _additional_branches.iteritems():
 
-          _type[0] = getattr( utility_py, _b)(_tree)*1.0
+          # Line where magic happens
+          _values = getattr( utility_py, _b)(_tree)
+
+          _definition = self.variables['definition'][_b]
+
+          # Fill single value
+          if _definition['size'] == 1:
+              _array[0] = _values
+
+          # Fill vector
+          else:
+            for _i in xrange(len(_array)):
+              _array[_i] = _values[_i]
 
         _new_tree.Fill()
 
@@ -292,6 +305,128 @@ class PreselectionTool(object):
 
       MiscTool.Print('status', 'File {0} done.'.format(_path_file_new))
 
+  def create_boosted_trees_on_unmerged_files_using_batch(self):
+
+    MiscTool.Print('python_info', '\nCalled create_boosted_trees_on_unmerged_files_using_batch function.')  
+
+    # Loop over samples
+    for _sample in self.list_of_samples:
+
+      MiscTool.Print('status', '\n' + _sample)
+
+      _files = open(os.path.join(self.path_list_of_samples, _sample),'r')
+
+      # For each file create job by copying template script
+      for _i,_f in enumerate(_files):
+
+        if not self.filter(_f):
+          continue
+
+        _file = _f.replace('\n', '')
+
+        _input_file = _file.replace(self.path_samples, self.path_preselected_samples)    
+        _inital_directory, _script_name = _file.replace(self.path_samples, self.path_batch_scripts).split('tree')
+
+        _checksum_variables = hashlib.md5('_'.join(self.variables['variables'])).hexdigest() 
+        _output_file = _input_file.replace( 'tree', '_'.join(['tree', _checksum_variables]))
+
+        # If preselected file already exists skip
+        if TreeTool.TreeTool.check_if_tree_ok(_output_file) and not self.force_all:
+          MiscTool.Print('python_info','File {0} already exists.'.format(_output_file))
+          continue
+
+        _batch_arguments = {
+          '<initial_directory>' : _inital_directory,                        # path to newly created batch script
+          '<input_file>'        : _input_file,                              # file w/ presel
+          '<output_file>'       : _output_file,                             # boosted file
+          '<variables>'         : str(self.variables),                      # variables
+          '<script_name>'       : _script_name.replace('.root','_boosted'), # 1401
+          'python_template'     : os.path.join(self.path_batch_templates, 'boosted_tree_batch.py')
+        }
+
+        _batch = BatchTool.BatchTool(_batch_arguments)
+        _batch.make_scripts()
+        _batch.send_job()
+
+  def check_boosted_trees(self):
+
+    MiscTool.Print('python_info', '\nCalled check_root_preselected_files function.')
+
+    # Samples loop
+    for _s in self.list_of_samples:
+
+      MiscTool.Print('status', 'Checking sample: {0}'.format(_s))
+
+      try:
+
+        _destination_file   = open(os.path.join(self.path_list_of_samples, _s),'r') 
+
+        # files loop
+        for _f in _destination_file:
+
+          _file = _f.replace('\n', '').replace( self.path_samples, self.path_preselected_samples)
+          _checksum_variables = hashlib.md5('_'.join(self.variables['variables'])).hexdigest() 
+          _file = _file.replace( 'tree', '_'.join(['tree', _checksum_variables]))
+
+          try:
+            if TreeTool.TreeTool.check_if_tree_ok(_file):
+              pass
+              # MiscTool.Print('status', 'File: {0} OK.'.format(_file))
+            else:
+              MiscTool.Print('error', 'File: {0} not OK.'.format(_file))
+          
+          except Exception, e:
+            MiscTool.Print('error', 'File: {0} not OK.'.format(_file))
+
+      except Exception, e:
+        print 'Problem with {0}.'.format(_s)
+
+  def merge_boosted_trees(self):
+
+    MiscTool.Print('python_info', '\nCalled merge_boosted_trees function.')  
+
+    # Loop over samples
+    for _sample in self.list_of_samples:
+
+      MiscTool.Print('status', '\nMerging preselected files for: ' + _sample)
+
+      _files = open(os.path.join( self.path_list_of_samples, _sample), 'r') 
+
+      # name of merged root file      
+      _checksum_variables = hashlib.md5('_'.join(self.variables['variables'])).hexdigest()
+      _file_name = _sample.replace('local.txt', _checksum_variables + '.root')
+      _merge_file_name = os.path.join( self.path_preselected_samples, _file_name )
+
+      # If merged preselected file already exists skip
+      if TreeTool.TreeTool.check_if_tree_ok(_merge_file_name) and not self.force_all:
+        MiscTool.Print('python_info','File {0} already exists.'.format(_merge_file_name))
+        continue
+
+      _merger = ROOT.TFileMerger(ROOT.kFALSE)
+      _merger.OutputFile(_merge_file_name, 'RECREATE')
+
+      for _i,_f in enumerate(_files):
+
+        _file = _f.replace('\n', '').replace( self.path_samples, self.path_preselected_samples)
+        _checksum_variables = hashlib.md5('_'.join(self.variables['variables'])).hexdigest() 
+        _file = _file.replace( 'tree', '_'.join(['tree', _checksum_variables]))
+
+        MiscTool.Print('status', _file)
+
+        # if i != 0:
+        #   continue
+
+        # Check if file exists, if not store
+        if not os.path.isfile(_file):
+          MiscTool.Print('error', 'File {0} is missing.'.format(_file))
+          continue
+
+        _merger.AddFile(_file)        
+        
+      _merger.Merge()
+
+      MiscTool.Print('status', '\nMerging done.')
+
   # Filter files which have the keywords
   def filter(self, file_name):
 
@@ -300,6 +435,3 @@ class PreselectionTool(object):
     else:
       return True
 
-def X():
-
-  return 5

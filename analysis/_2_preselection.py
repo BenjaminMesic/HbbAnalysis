@@ -28,5 +28,10 @@ if __name__ == '__main__':
   # # Merge files
   # p.merge()
 
-  # Create boosted trees
-  p.create_boosted_trees()
+  # # Create boosted trees
+  # p.create_boosted_trees()
+
+  # Use batch
+  # p.create_boosted_trees_on_unmerged_files_using_batch()
+  # p.check_boosted_trees()
+  p.merge_boosted_trees()

@@ -15,14 +15,14 @@ if __name__ == '__main__':
   path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
 
   paths = {
-    'path_samples'          : path_samples,
+    'path_samples'                : path_samples,
     'path_samples_preselection'   : '_'.join([path_samples, analysis_name, 'preselection']),
-    'path_cache'          : '_'.join([path_samples, analysis_name, 'cache']),
-    'path_configuration'      : os.path.join( path_working_directory, 'configuration', analysis_name),
-    'path_plots'          : os.path.join( path_working_directory, 'plots', analysis_name),
-    'path_results'          : os.path.join( path_working_directory, 'results', analysis_name),
-    'path_extra'          : os.path.join( path_working_directory, 'extra', analysis_name),
-    'path_external'         : os.path.join( path_working_directory, 'external', analysis_name)
+    'path_cache'                  : '_'.join([path_samples, analysis_name, 'cache']),
+    'path_configuration'          : os.path.join( path_working_directory, 'configuration', analysis_name),
+    'path_plots'                  : os.path.join( path_working_directory, 'plots', analysis_name),
+    'path_results'                : os.path.join( path_working_directory, 'results', analysis_name),
+    'path_extra'                  : os.path.join( path_working_directory, 'extra', analysis_name),
+    'path_external'               : os.path.join( path_working_directory, 'external', analysis_name)
   }
 
   # ----------------------------------------------------

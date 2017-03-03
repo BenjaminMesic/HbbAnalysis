@@ -11,12 +11,29 @@
   # ----------------------------------
 
   'subsamples_cut': {
-    'light'     : 'ttCls<41',
-    'c'       : 'ttCls>=41 && ttCls<=45',
-    '1b'      : 'ttCls>=51 && ttCls<=52',
-    '2b'      : 'ttCls>=53 && ttCls<=55',
-    'el'      : 'run<=276811 && abs(vLeptons_pdgId[0]) == 11 && Vtype==3 && HLT_BIT_HLT_Ele27_eta2p1_WPLoose_Gsf_v == 1 && json',
-    'mu'      : 'run<=276811 && abs(vLeptons_pdgId[0]) == 13 && Vtype==2 && ( HLT_BIT_HLT_IsoMu22_v == 1 || HLT_BIT_HLT_IsoTkMu22_v == 1 ) && json'
+    # HT bin subsamples
+    'light'     : 'ttCls<41 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40)',
+    'c'         : 'ttCls>=41 && ttCls<=45 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40)',
+    '1b'        : 'ttCls>=51 && ttCls<=52 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40)',
+    '2b'        : 'ttCls>=53 && ttCls<=55 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40)',
+    # Inclusive
+    'lightIncl' : 'ttCls<41 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40) && lheHT < 100',
+    'cIncl'     : 'ttCls>=41 && ttCls<=45 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40) && lheHT < 100',
+    '1bIncl'    : 'ttCls>=51 && ttCls<=52 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40) && lheHT < 100',
+    '2bIncl'    : 'ttCls>=53 && ttCls<=55 && ((lheNb==0 & nGenStatus2bHad==0 & lheV_pt>40) || lheV_pt<40) && lheHT < 100',
+    # BJets
+    'lightB'    : 'ttCls<41 && lheNb>0 & lheV_pt>40',
+    'cB'        : 'ttCls>=41 && ttCls<=45 && lheNb>0 & lheV_pt>40',
+    '1bB'       : 'ttCls>=51 && ttCls<=52 && lheNb>0 & lheV_pt>40',
+    '2bB'       : 'ttCls>=53 && ttCls<=55 && lheNb>0 & lheV_pt>40',
+    # BFilter
+    'lightBFil' : 'ttCls<41 && (nGenStatus2bHad>0 & lheV_pt>40)',
+    'cBFil'     : 'ttCls>=41 && ttCls<=45 && (nGenStatus2bHad>0 & lheV_pt>40)',
+    '1bBFil'    : 'ttCls>=51 && ttCls<=52 && (nGenStatus2bHad>0 & lheV_pt>40)',
+    '2bBFil'    : 'ttCls>=53 && ttCls<=55 && (nGenStatus2bHad>0 & lheV_pt>40)',
+    # Data, trigger cuts, etc...
+    'el'        : 'run<=276811 && abs(vLeptons_pdgId[0]) == 11 && Vtype==3 && HLT_BIT_HLT_Ele27_eta2p1_WPLoose_Gsf_v == 1 && json',
+    'mu'        : 'run<=276811 && abs(vLeptons_pdgId[0]) == 13 && Vtype==2 && ( HLT_BIT_HLT_IsoMu22_v == 1 || HLT_BIT_HLT_IsoTkMu22_v == 1 ) && json'
   },
 
   # ----------------------------------

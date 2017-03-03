@@ -5,11 +5,11 @@
 
   'task' : {
     'test_cut'            : ['all'],
-    'preselection'        : ['TT', 'WplusHPOWPYT', 'WminusHPOWPYT'], # ['TT', 'WplusHPOWPYT', 'WminusHPOWPYT', 'WJets'], #
+    'preselection'        : ['all'],
     'control_region_test' : ['SE', 'SM', 'WH', 'TT', 'WJets_light'],
     'signal_region'       : ['SE', 'SM', 'WH', 'TT', 'WJet100', 'QCD100', 'QCD200', 'QCD300', 'QCD500', 'QCD700', 'QCD1000', 'QCD1500', 'QCD2000'],
     'datacards'           : ['SE', 'SM', 'WH', 'ZH', 'WJets', 'TT'],
-    'boost_bkg_estimate'  : ['TT', 'WplusHPOWPYT', 'WminusHPOWPYT'] #, 'WplusHPOWPYT', 'WminusHPOWPYT', 'WJets']
+    'boost_bkg_estimate'  : ['all'] #['TT', 'WplusHPOWPYT', 'WminusHPOWPYT'] #, 'WplusHPOWPYT', 'WminusHPOWPYT', 'WJets']
   },
   
 
@@ -59,60 +59,60 @@
       'types' : 'mc',
       'xsec'  : 61526.7
     },
-    # 'WBJetsToLNu_Wpt-40toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WBJets',
-    #   'sub' : ['WBJets_light', 'WBJets_c', 'WBJets_1b', 'WBJets_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 34.2
-    # },
-    # 'WJetsToLNu_BGenFilter_Wpt-40toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJetsBGen',
-    #   'sub' : ['WJetsBGen_light', 'WJetsBGen_c', 'WJetsBGen_1b', 'WJetsBGen_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 201.8
-    # },
-    # 'WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet100',
-    #   'sub' : ['WJet100_light', 'WJet100_c', 'WJet100_1b', 'WJet100_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 1345
-    # },
-    # 'WJetsToLNu_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet200',
-    #   'sub' : ['WJet200_light', 'WJet200_c', 'WJet200_1b', 'WJet200_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 359.7
-    # },
-    # 'WJetsToLNu_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet400',
-    #   'sub' : ['WJet400_light', 'WJet400_c', 'WJet400_1b', 'WJet400_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 48.91
-    # },
-    # 'WJetsToLNu_HT-600To800_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet600',
-    #   'sub' : ['WJet600_light', 'WJet600_c', 'WJet600_1b', 'WJet600_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 12.05
-    # },
-    # 'WJetsToLNu_HT-800To1200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet800',
-    #   'sub' : ['WJet800_light', 'WJet800_c', 'WJet800_1b', 'WJet800_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 5.501
-    # },
-    # 'WJetsToLNu_HT-1200To2500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet1200',
-    #   'sub' : ['WJet1200_light', 'WJet1200_c', 'WJet1200_1b', 'WJet1200_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 1.329
-    # },
-    # 'WJetsToLNu_HT-2500ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
-    #   'ID'  : 'WJet2500',
-    #   'sub' : ['WJet2500_light', 'WJet2500_c', 'WJet2500_1b', 'WJet2500_2b'],
-    #   'types' : 'mc',
-    #   'xsec'  : 0.03216
-    # },
+    'WBJetsToLNu_Wpt-40toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WBJets',
+      'sub' : ['WBJets_light', 'WBJets_c', 'WBJets_1b', 'WBJets_2b'],
+      'types' : 'mc',
+      'xsec'  : 34.2
+    },
+    'WJetsToLNu_BGenFilter_Wpt-40toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJetsBGen',
+      'sub' : ['WJetsBGen_light', 'WJetsBGen_c', 'WJetsBGen_1b', 'WJetsBGen_2b'],
+      'types' : 'mc',
+      'xsec'  : 201.8
+    },
+    'WJetsToLNu_HT-100To200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet100',
+      'sub' : ['WJet100_light', 'WJet100_c', 'WJet100_1b', 'WJet100_2b'],
+      'types' : 'mc',
+      'xsec'  : 1345
+    },
+    'WJetsToLNu_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet200',
+      'sub' : ['WJet200_light', 'WJet200_c', 'WJet200_1b', 'WJet200_2b'],
+      'types' : 'mc',
+      'xsec'  : 359.7
+    },
+    'WJetsToLNu_HT-400To600_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet400',
+      'sub' : ['WJet400_light', 'WJet400_c', 'WJet400_1b', 'WJet400_2b'],
+      'types' : 'mc',
+      'xsec'  : 48.91
+    },
+    'WJetsToLNu_HT-600To800_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet600',
+      'sub' : ['WJet600_light', 'WJet600_c', 'WJet600_1b', 'WJet600_2b'],
+      'types' : 'mc',
+      'xsec'  : 12.05
+    },
+    'WJetsToLNu_HT-800To1200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet800',
+      'sub' : ['WJet800_light', 'WJet800_c', 'WJet800_1b', 'WJet800_2b'],
+      'types' : 'mc',
+      'xsec'  : 5.501
+    },
+    'WJetsToLNu_HT-1200To2500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet1200',
+      'sub' : ['WJet1200_light', 'WJet1200_c', 'WJet1200_1b', 'WJet1200_2b'],
+      'types' : 'mc',
+      'xsec'  : 1.329
+    },
+    'WJetsToLNu_HT-2500ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8':{
+      'ID'  : 'WJet2500',
+      'sub' : ['WJet2500_light', 'WJet2500_c', 'WJet2500_1b', 'WJet2500_2b'],
+      'types' : 'mc',
+      'xsec'  : 0.03216
+    },
     # 'ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8_TuneCUETP8M1':{
     #   'ID'  : 'TBarToLeptonst',
     #   'types' : 'mc',

@@ -199,8 +199,8 @@ class SampleTool(object):
       # Set parent file (input) for this sample
       _file               = self.samples[_s].name + '.root'
       _checksum_variables = hashlib.md5('_'.join(self.variables['variables'])).hexdigest() 
-      _path_boosted_file  = os.path.join(self.path_cache, '_'.join(['boost', _checksum_variables, _file]))
       _path_old_file      = os.path.join(self.path_samples, _file)
+      _path_boosted_file  = _path_old_file.replace('.root', '_' + _checksum_variables + '.root')
 
       # Check whether boosted tree exists
       if TreeTool.TreeTool.check_if_tree_ok(_path_boosted_file) and self.boosted_trees:
