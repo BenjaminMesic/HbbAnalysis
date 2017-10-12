@@ -7,15 +7,15 @@ luminosity                      = 36400 #12900, # pb-1
 # Force all jobs even if the files already exist
 force_all                       = False
 # Send job either batch or interactively
-send_jobs                       = True
+send_jobs                       = False
 # Work on batch
 batch                           = True
 # Use user created files
-user_defined_files              = True
+user_defined_files              = False
 # Merge files after Ls
 work_with_Ls_only               = False
 # Do final/task selection on merged files if they exist
-task_selection_on_merged_files  = True
+task_selection_on_merged_files  = False
 
 tag = '13TeV'
 
