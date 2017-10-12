@@ -7,130 +7,175 @@ from utility import MiscTool
 ROOT.gROOT.SetBatch(True)
 
 class DataCardTool(object):
-  '''
-
-  ''' 
   
-  def __init__(self, task, analysis_name, configuration, sample_tool):
+  def __init__(self, configuration):
 
     MiscTool.Print('python_info', '\nCreated instance of DataCardTool class')
 
     # ------ Paths -------
-    self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
-    self.path_results       = os.path.join( self.path_working_directory, 'results', analysis_name, 'datacards')
-    MiscTool.make_directory(self.path_results)
-
-    # ------ Samples -------
-    self.sample_tool  = sample_tool
-
-    # ------ Weights -------
-    self.weights    = configuration['weights']
+    self.path_analysis_working_directory  = configuration.paths.path_analysis_working_directory
+    self.path_datacards                   = MiscTool.make_directory( os.path.join( self.path_analysis_working_directory, 'results', 'datacards') )
+    MiscTool.make_directory(self.path_datacards)
 
     # ------ Datacard Config -------
-  
-    self.channels   = configuration['datacards']['channels']
-    self.bins     = configuration['datacards']['bins']
-    self.nuisance_parameters = configuration['datacards']['nuisance_parameters']
+    self.configuration            = configuration.datacards.datacard
+
+    self.yields                   = {}
+    self.templates                = {}
+
+  def get_yields_and_templates(self):
+
+    MiscTool.Print('python_info', '\nCalled set_observations_and_templates function.')
+
+    for _c in self.configuration['channels']:
+      
+      MiscTool.Print('status', '\nChannel: {0}'.format(_c))
+
+      self.yields[_c] = {}
+      self.templates[_c] = {}
+
+      _input_file  = ROOT.TFile.Open( self.configuration['input_files'][_c], 'read')
+      _dirlist     = _input_file.GetListOfKeys()
     
-    self.process  = configuration['datacards']['process']
-    self.definitions= configuration['datacards']['definitions']
+      iter = _dirlist.MakeIterator()
+      _key = iter.Next()
 
-    self.yields   = {}
-
-  def make_all(self):
-
-    MiscTool.Print('python_info', '\nCreating datacards.')
-    
-    # Loop over all channels
-    for _c in self.channels:
-
-      # Loop over all bins for which we are going to make datacard
-      for _b in self.bins:
-
-        # ---------- Datacards --------------
-
-        # prepare nuisance string
-        _nuisance = ''
-        for _n in self.nuisance_parameters:
-          _nuisance += self._print_aligned().format( _n, '', self.nuisance_parameters[_n]['model'], *[str(self.nuisance_parameters[_n]['process'][_p[0]]) for _p in self.process] ) + '\n'
-
-        # Strings which will replace template datacard strings
-        _replacing_strings = {
-
-          '<jmax>'  : len(self.process) - 1,
-          '<bin>'   : _b,
-          '<kmax>'  : len(self.nuisance_parameters),
-
-          '<bin_entry>'   : self._print_aligned().format( 'bin', '', '',str(_b), *['']*(len(self.process)-3)),          
-          '<observation_entry>'   : self._print_aligned().format( 'observation', '', '', str(self.yields[_c + '___' + _b]), *['']*(len(self.process)-3)),
-
-          '<bin_process>' : self._print_aligned().format('bin', '', '', *[_b]*len(self.process)),
-          '<process>'   : self._print_aligned().format('process', '', '', *[_p[0] for _p in self.process]),
-          '<process_num>' : self._print_aligned().format('process', '', '', *[_p[1] for _p in self.process]),
-          '<rate>'    : self._print_aligned().format('rate', '', '', *[ str( round( self.yields[ '___'.join([ _p[0], _b])], 2)) for _p in self.process]),
-          '<nuisance>'  : _nuisance
-
-          }
-
-        # Creating and saving datacard
-        with open(os.path.join(self.path_working_directory, 'utility', 'templates', 'datacard.txt'), 'r') as f:
-          _datacard = f.read()
-
-        for _s, _r in _replacing_strings.iteritems():
-          _datacard = _datacard.replace( _s, str(_r))
-
-        _f = open( os.path.join( self.path_results, '_'.join([ 'vhbb', _c, _b]) + '.txt'),'w')
-        _f.write(_datacard)
-        _f.close()
-
-
-        # ---------- Histograms --------------
+      while _key:
         
-        # Create root file, always recreate
-        _f = ROOT.TFile.Open(os.path.join( self.path_results, '_'.join([ 'hists', _c, _b]) + '.root'),'recreate')
+        _histogram = _input_file.Get(_key.GetName())
+        _histogram.SetDirectory(0)
 
-        # TBD
-        # # Loop over nuisance parameters, if shape fill
-        # for _n in self.nuisance_parameters:
+        _var, _id  = _key.GetName().split('__')
 
-        _f.Close()
+        if _id not in self.configuration['definitions']:
+          MiscTool.Print('error', '{0} not in datacard definitions.'.format(_id))
+          _key = iter.Next()
+          continue
 
-  def _print_aligned(self):
-    _string = '{0:20s}'
+        _process   = self.configuration['definitions'][_id]
 
-    for _i in xrange(1, len(self.process)+1):
-      _string += '{' + str(_i) + ':12s}'  
+        # Make sure that you are using correct histograms for yield extraction
+        if _var == self.configuration['variable']:
 
-    return _string
+          # Adding yields
+          if _process not in self.yields[_c]:              
+              self.yields[_c][_process] = _histogram.Integral()
+          else:
+              self.yields[_c][_process] += _histogram.Integral()
 
-  def _set_observations_and_rates(self):
+        # Adding templates for root file
+        if _var.replace('Up', '').replace('Down', '') in self.configuration['nuisance_parameters'] or _var == self.configuration['variable']:
 
-    # Loop over all samples
-    for _s in self.sample_tool.samples:
+          if _process not in self.templates[_c]:
+              self.templates[_c][_process] = _histogram.Clone()
+              self.templates[_c][_process].SetDirectory(0)
 
-      for _f in self.sample_tool.samples[_s].files:
+              # Set names following the COMBINE convetion
+              if _var == self.configuration['variable']:
+                self.templates[_c][_process].SetName(_process)
+              elif 'Up' in _var or 'Down' in _var:
+                self.templates[_c][_process].SetName(_process + '_' + _var)
 
-        _input = ROOT.TFile.Open( self.sample_tool.samples[_s].files[_f]['tree'],'read')
-        _tree = _input.Get('tree')
-        _histogram = ROOT.TH1F( 'integral', 'integral', 1, -1, 1000000)
+          else:
+              self.templates[_c][_process].Add(_histogram)
+              self.templates[_c][_process].SetDirectory(0)
 
-        # Weights and scale factor part
-        _weight = '1'
-        if self.sample_tool.samples[_s].types == 'mc':
-          _weight = '*'.join(self.weights.values()) + '*' + self.sample_tool.samples[_s].normalization_factor
+        else:
+          MiscTool.Print('error', '{0} not used.'.format(_var))
 
-        # Get histogram from the tree directly
-        _tree.Draw('{0}>>{1}'.format( 'rho', 'integral'), _weight)
+        MiscTool.Print('analysis_info', 'Sample: {0} {1}'.format(_id, _process), 'Yield: {0}'.format(_histogram.Integral()))
 
-        # Get histogram integral
-        _ID, _bin = _f.split('___')
-        self.yields[self.definitions[_ID] + '___' + _bin] = _histogram.Integral()
+        _key = iter.Next()
 
-        # Check if every process has its yields
-        for _p in self.process:
+      # DATA Added manually but this need to be changed once we have data
+      self.templates[_c]['data_obs'] = self.templates[_c]['WH'].Clone()
+      self.templates[_c]['data_obs'].SetName('data_obs')
+      self.templates[_c]['data_obs'].SetDirectory(0)
+      self.templates[_c]['data_obs'].Scale(0)
 
-          _id = _p[0] + '___' + _bin
+  def make(self):
 
-          if _id not in self.yields:
-            self.yields[ _id ] = -1
+    MiscTool.Print('python_info', '\nCalled make function.')
 
+    _path_datacard  = os.path.join( self.path_datacards, self.configuration['datacard_name'])
+    _path_template  = os.path.join( self.path_datacards, self.configuration['template_name'])
+
+    # Create datacard
+    self._datacard( _path_datacard, self.configuration['datacard_type'])
+
+    # Create root file with the templates
+    self._templates( _path_template, self.configuration['datacard_type'])
+
+  def _datacard(self, path_output, datacard_type):
+
+    MiscTool.Print('python_info', '\nCalled _datacard function.')
+
+    _datacard = '# WHbb in boosted topology'
+    _datacard += '\nimax {0}  number of channels'.format(self.configuration['number_of_channels'])
+    _datacard += '\njmax {0}  number of backgrounds'.format(self.configuration['number_of_backgrounds'])
+    _datacard += '\nkmax {0}  number of nuisance parameters (sources of systematical uncertainties)'.format(self.configuration['number_of_nuisance_parameters'])
+
+    if datacard_type == 'shape':
+      _datacard += '\n------------'
+      _datacard += '\nshapes * * {0} $PROCESS '.format(self.configuration['template_name'])
+      # If there are nuisance parameteres add
+      if self.configuration['number_of_nuisance_parameters'] > 0:
+        _datacard += '$PROCESS_$SYSTEMATIC'
+
+    _datacard += '\n------------'
+    _datacard += "\n# {0} channels, each with it's number of observed events".format(self.configuration['number_of_channels'])
+    _datacard += '{0:20s}'.format('\nbin') + ''.join([ '{0:10s}'.format(_c) for _c in self.configuration['channels']])
+    _datacard += '{0:20s}'.format('\nobservation') + ''.join([ '{0:10s}'.format(str(_c)) if 'data' in self.yields[_c] else '{0:10s}'.format(str(0))
+                    for _c in self.configuration['channels']])
+    _datacard += '\n------------'
+
+
+    print self.configuration['process']
+
+    print self.configuration['channels']
+    print self.yields
+
+    _datacard += '\n# now we list the expected events for signal and all backgrounds in those bins'
+    _datacard += '\n# the second process line must have a positive number for backgrounds, and 0 for signal'
+    _datacard += '{0:20s}'.format('\nbin')      + ''.join([ '{0:10s}'.format(_c)*(self.configuration['number_of_backgrounds']+1) for _c in self.configuration['channels']])
+    _datacard += '{0:20s}'.format('\nprocess')  + ''.join([ '{0:10s}'.format(_p[0]) for _c in self.configuration['channels'] for _p in self.configuration['process']])
+    _datacard += '{0:20s}'.format('\nprocess')  + ''.join([ '{0:10s}'.format(_p[1]) for _c in self.configuration['channels'] for _p in self.configuration['process']])
+    _datacard += '{0:20s}'.format('\nrate')     + ''.join([ '{0:10s}'.format( format(self.yields[_c][_p[0]], '.2f') ) 
+                    for _c in self.configuration['channels'] for _p in self.configuration['process']])
+    _datacard += '\n------------'
+
+    for _n,_nn in self.configuration['nuisance_parameters'].iteritems():
+      _datacard += '{0:14s}{1:6s}'.format('\n'+_n, _nn['model']) + ''.join([ '{0:10s}'.format(str( _nn['process'][_p[0]])) if _p[0] in _nn['process'] else '{0:10s}'.format('-')  
+                      for _c in self.configuration['channels'] for _p in self.configuration['process']])
+      _datacard += _nn['description']
+
+    # Save datcard
+    with open(path_output, 'w') as _f:
+      _f.write(_datacard)
+
+    MiscTool.Print('status', 'Datacard saved as {0}'.format(path_output))
+    print _datacard
+
+  def _templates(self, path_output, datacard_type):
+ 
+    MiscTool.Print('python_info', '\nCalled _templates function.')
+
+    if not datacard_type == 'shape':
+      return False
+
+    else:
+      
+      # Histograms will be saved in new root file
+      _output      = ROOT.TFile.Open( path_output, 'recreate')
+
+      for _c in self.templates:
+
+        for _t, _h in self.templates[_c].iteritems():
+          
+          MiscTool.Print('analysis_info', 'Process: {0}'.format(_h.GetName()), 'Yield: {0}'.format(_h.Integral()))
+
+          _h.Write()
+
+      _output.Close()
+
+    MiscTool.Print('status', 'Templates saved as {0}'.format(path_output))

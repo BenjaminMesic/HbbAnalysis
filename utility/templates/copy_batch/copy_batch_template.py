@@ -10,7 +10,7 @@ def copy(destination, source):
 	MiscTool.make_directory(destination)
 
 	_command = ['gfal-copy', '--force']
-	_command.append('srm:/' + source)
+	_command.append('<copy_protocol>' + source)
 	_command.append('file:///' + destination)
 
 	sp.call(_command)

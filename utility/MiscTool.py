@@ -1,7 +1,5 @@
-import sys
-import time
 import os
-import subprocess as sp
+import sys
 
 def Print(print_type, *text):
  
@@ -28,7 +26,18 @@ def Print(print_type, *text):
   except Exception, e:
     print text
 
-def analysis_name():
+def make_directory(directory):
+
+  if not os.path.exists(directory):
+    try:
+      os.makedirs(directory)
+    except OSError:
+      if not os.path.isdir(directory):
+        raise
+
+  return directory
+
+def get_analysis_name():
   ''' Just function which gets argv and return analysis_name. Need sys library'''
   _analysis_name = ''
   if len(sys.argv) == 1:
@@ -40,54 +49,45 @@ def analysis_name():
   return _analysis_name
 
 def get_configuration_files(analysis_name):
+
+  import analysis
   
-  _configuration_files_path = os.path.join( os.environ['Hbb_WORKING_DIRECTORY'], 'configuration', analysis_name)
+  exec('from analysis.{0} import configuration'.format(analysis_name))
 
-  Print('analysis_info', 'Configuration files from ', analysis_name)  
+  return configuration
 
-  _files = sp.check_output(['ls', _configuration_files_path]).split()
+def ID_sample_dictionary( IDs, samples_configuration):
+  'Give list of IDs and return corresponding list of samples'
 
-  _configuration_files = {}
+  _samples = []
 
-  for _c in _files:
+  if IDs == ['all']:
+    return samples_configuration.samples_list.keys()
 
-    if '~' in _c:
-      continue
+  else:
 
-    Print('analysis_info', '', _c)
+    # Loop over all IDs
+    for _id in IDs:
+      
+      _sample = ''
 
-    try:
-      _configuration_files[_c.split('.')[0]] = eval(open(os.path.join( _configuration_files_path, _c)).read())
-    except Exception, e:
-      Print('error', 'Problem with loading: ' + _c)
-      raise
+      # Loop over all samples
+      for _s in samples_configuration.samples_list.keys():
+        
+        # Check if ID match sample
+        if _id == samples_configuration.samples_list[_s]['ID']:
+          _sample = _s
+          break
 
-  return _configuration_files
+        # Check if ID match subsample
+        elif 'sub' in samples_configuration.samples_list[_s] and _id in samples_configuration.samples_list[_s]['sub']:
+          _sample = _s
+          break
 
-def make_directory(directory):
+      if _sample == '':
+        Print('error', 'Check your ID {0}'.format(_id))
+      else:
+        _samples.append(_s)
 
-  if not os.path.exists(directory):
-    try:
-      os.makedirs(directory)
-    except OSError:
-      if not os.path.isdir(directory):
-        raise
-
-def progress_bar(progress):
-  barLength = 100 # Modify this to change the length of the progress bar
-  status = ""
-  if isinstance(progress, int):
-    progress = float(progress)
-  if not isinstance(progress, float):
-    progress = 0
-    status = "error: progress var must be float\r\n"
-  if progress < 0:
-    progress = 0
-    status = "Halt...\r\n"
-  if progress >= 1:
-    progress = 1
-    status = "Done...\r\n"
-  block = int(round(barLength*progress))
-  text = "\rPercent: [{0}] {1}% {2}".format( "#"*block + "-"*(barLength-block), progress*100, status)
-  sys.stdout.write(text)
-  sys.stdout.flush()
+  # remove duplicates
+  return list(set(_samples))

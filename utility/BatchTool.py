@@ -5,31 +5,8 @@ import stat
 from utility import MiscTool
 
 class BatchTool(object):
-  '''
-  -----------
-  Description:
-  Load existing batcth templates, adjust and saves them, send job
 
-  ----------- 
-  Input files:
-
-
-  -----------
-  Parameters:
-
-
-  -----------
-  Functions:
-
-  -----------
-  Useful commands:
-
-
-  -----------
-  To DO:
-
-  ''' 
-  def __init__(self, arguments):
+  def __init__(self, arguments, batch=True, send_job=True):
 
     self.arguments    = arguments
     self.template_txt = [
@@ -48,6 +25,8 @@ class BatchTool(object):
       'python <script_name>.py'
     ]
 
+    self.batch        = batch
+    self.send         = send_job
 
     # make batch directory
     MiscTool.make_directory(self.arguments['<initial_directory>'])
@@ -85,15 +64,20 @@ class BatchTool(object):
     #   continue
     # if i%100 == 0 and i!=0:
     #   time.sleep(40)
+    if self.send:
 
-    # Change permission so that it can be executed 
-    _sh = os.path.join(self.arguments['<initial_directory>'], self.arguments['<script_name>'] + '.sh')
-    os.chmod(_sh, os.stat(_sh).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    
-    MiscTool.Print('status', _sh)
+      # Change permission so that it can be executed 
+      _sh = os.path.join(self.arguments['<initial_directory>'], self.arguments['<script_name>'] + '.sh')
+      os.chmod(_sh, os.stat(_sh).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+      
+      MiscTool.Print('python_info', _sh)
 
-    _working_dir = os.getcwd()
-    os.chdir( self.arguments['<initial_directory>'] )
-    # print sp.check_output('pwd', shell=True)
-    sp.call('condor_submit ' + self.arguments['<script_name>'] + '.txt', shell=True)      
-    os.chdir(_working_dir)
+      _working_dir = os.getcwd()
+      os.chdir( self.arguments['<initial_directory>'] )
+      # print sp.check_output('pwd', shell=True)
+      if self.batch:
+        sp.call('condor_submit ' + self.arguments['<script_name>'] + '.txt', shell=True)      
+      else:
+        sp.call('./{0}.sh'.format(self.arguments['<script_name>']), shell=True)
+      os.chdir(_working_dir)
+

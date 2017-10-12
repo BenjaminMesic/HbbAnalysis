@@ -18,22 +18,22 @@ class WeightTool(object):
 
   '''
 
-  def __init__(self, analysis_name, configuration):
+  def __init__(self, configuration):
 
     MiscTool.Print('python_info', '\nCreated instance of WeightTool class')
 
-    self.analysis_name  = analysis_name
-    self.configuration  = configuration
+    self.task_name = configuration.general.task_name
+
+    # self.analysis_name  = analysis_name
+    # self.configuration  = configuration
+
+    # ------ Paths -------
+    self.path_analysis_working_directory  = configuration.paths.path_analysis_working_directory
+    self.path_source                      = MiscTool.make_directory( os.path.join( self.path_analysis_working_directory, 'aux', 'weights'))
+    self.path_results                     = MiscTool.make_directory( os.path.join( self.path_analysis_working_directory, 'results', 'weights'))
 
     # ------ Weights -------
-    self.weights          = configuration['weights']
-
-    self.path_working_directory = os.environ['Hbb_WORKING_DIRECTORY']
-    self.path_source  = os.path.join( self.path_working_directory, 'external', analysis_name, 'weights')
-    self.path_results   = os.path.join( self.path_working_directory, 'results', analysis_name, 'weights')
-
-    MiscTool.make_directory(self.path_source)
-    MiscTool.make_directory(self.path_results)
+    self.weights                = configuration.weights.weights
 
   @staticmethod
   def weight_handler( sample, configuration_weights):
@@ -46,19 +46,18 @@ class WeightTool(object):
       if _w['samples'] == 'all':
         _weight += '*' + _w['weight']
 
-      elif _w['samples'] == 'all_but_data' and sample.types != 'data':
+      if _w['samples'] == 'all_but_data' and sample.types != 'data':
         _weight += '*' + _w['weight']
 
-      elif sample.ID in _w['samples']:
+      if sample.ID in _w['samples']:
         _weight += '*' + _w['weight']
 
-      else:
-        pass
+      # else:
+      #   pass
 
     return _weight
 
   # ----------------- Pile Up ---------------------
-
   def pile_up_handler(self):
     ''' Function used to calculate pile_up weights and store them as C function.'''
 
@@ -151,25 +150,112 @@ class WeightTool(object):
 
     return _code
 
+  # ----------------- Top ---------------------
+  def gen_pt_top_handler(self):
+
+    MiscTool.Print('python_info', '\nCalled gen_pt_top_handler function.')
+
+    # Create and save C code
+    _code = self.gen_pt_top_C_writer()
+    self._save_C_code( self.weights['gen_pt_top']['C'], _code)
+
+  def gen_pt_top_C_writer(self):
+
+    MiscTool.Print('python_info', '\nCalled gen_pt_top_C_writer function.')
+
+    _code = '#include <math.h>\n'
+    # _code += '#include <stdio.h>\n\n'
+
+    _code += 'double gen_pt_top( double pt_t, double pt_at)\n{\n'
+    # _code += 'cout << exp(pt_t) << endl;\n'
+    _code += '    ' +  'return sqrt(exp(0.0615 - 0.0005*pt_t)*exp(0.0615 - 0.0005*pt_at))' + ';\n'
+
+    _code += '\n}'
+
+    return _code
+
   # ----------------- Muons ---------------------
   def scale_factor_muon_ID_handler(self):
     ''' Function used to calculate muon ID scale factors and store them as C function.'''
 
     MiscTool.Print('python_info', '\nCalled scale_factor_muon_ID_handler function.')
 
-    _code = self._scale_factor_muon_ID_C_writer()
+    try:
+
+      _files = self.weights['scale_factor_muon_ID']['file']
+      _type  = self.weights['scale_factor_muon_ID']['type']
+
+      # There are different number of two run intervals
+      _input = {}
+      
+      for _f in _files:
+        
+        _input[_f] = eval(open(_f).read())[_type]['pt_abseta_ratio']
+        MiscTool.Print('analysis_info', 'Successfully Opened: ', _f)
+
+    except Exception, e:
+      MiscTool.Print('error', 'Something is wrong with opening file{0}'.format(_f))
+      raise
+
+    # Get scale factors for all eta pt bins and all types, i.e. run intervals
+    _scale_factors = {}
+
+    for _f, _sf in _input.iteritems():
+
+      _scale_factors[_f] = {}
+
+      for _etab, _ptbins in _sf.iteritems():
+        
+        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
+        _scale_factors[_f][_eta_bin] = {}
+
+        for _ptb, _sf in _ptbins.iteritems():
+
+          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
+          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+
+    _code = self._scale_factor_muon_ID_C_writer( _scale_factors)
     self._save_C_code(self.weights['scale_factor_muon_ID']['C'], _code)
 
-  def _scale_factor_muon_ID_C_writer(self):
+  def _scale_factor_muon_ID_C_writer(self, scale_factors):
+
+    _files = self.weights['scale_factor_muon_ID']['file']
 
     # function name
-    _code = 'double scale_factor_muon_ID( double SF, int lepton_pdgID)\n{\n'
+    _code = 'double scale_factor_muon_ID(double eta, double pt, int lepton_pdgID)\n{\n'
 
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # if eta not in any bin then return 0
-    _code += '  else\n    return SF; \n}'
+    # All files have the same structure so it is ok to just make one for loop
+    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+
+      _pt_min, _pt_max = _ptb.split(',')
+      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+      _code += '  {\n' # opening bracket 
+
+      for _etab in _etabins:
+ 
+        # Loop over all files to get sf
+        _sf = 0
+        for _f, _f_w in _files.iteritems():
+          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+
+        # Add eta if statement
+        _eta_min, _eta_max = _etab.split(',')
+        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+        # _code += '    {\n' # opening bracket
+
+        _code += '      return {0};\n'.format(_sf)
+
+      # if eta not in any bin then return 1
+      _code += '    else\n      return 1;\n'
+
+      _code += '  }\n'
+
+    # case if pt > max pt and closing bracket for eta if statement
+    _code += '  else\n   return 1;\n'    
+    _code += '}\n'
 
     return _code
 
@@ -178,19 +264,82 @@ class WeightTool(object):
 
     MiscTool.Print('python_info', '\nCalled scale_factor_muon_iso_handler function.')
 
-    _code = self._scale_factor_muon_iso_C_writer()
+    try:
+
+      _files = self.weights['scale_factor_muon_iso']['file']
+      _type  = self.weights['scale_factor_muon_iso']['type']
+
+      # There are different number of two run intervals
+      _input = {}
+      
+      for _f in _files:
+        
+        _input[_f] = eval(open(_f).read())[_type]['pt_abseta_ratio']
+        MiscTool.Print('analysis_info', 'Successfully Opened: ', _f)
+
+    except Exception, e:
+      MiscTool.Print('error', 'Something is wrong with opening file{0}'.format(_f))
+      raise
+
+    # Get scale factors for all eta pt bins and all types, i.e. run intervals
+    _scale_factors = {}
+
+    for _f, _sf in _input.iteritems():
+
+      _scale_factors[_f] = {}
+
+      for _etab, _ptbins in _sf.iteritems():
+        
+        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
+        _scale_factors[_f][_eta_bin] = {}
+
+        for _ptb, _sf in _ptbins.iteritems():
+
+          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
+          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+
+    _code = self._scale_factor_muon_iso_C_writer( _scale_factors)
     self._save_C_code(self.weights['scale_factor_muon_iso']['C'], _code)
 
-  def _scale_factor_muon_iso_C_writer(self):
-    
+  def _scale_factor_muon_iso_C_writer(self, scale_factors ):
+
+    _files = self.weights['scale_factor_muon_iso']['file']
+
     # function name
-    _code = 'double scale_factor_muon_iso( double SF, int lepton_pdgID)\n{\n'
+    _code = 'double scale_factor_muon_iso(double eta, double pt, int lepton_pdgID)\n{\n'
 
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # if eta not in any bin then return 0
-    _code += '  else\n    return SF; \n}'
+    # All files have the same structure so it is ok to just make one for loop
+    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+
+      _pt_min, _pt_max = _ptb.split(',')
+      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+      _code += '  {\n' # opening bracket 
+
+      for _etab in _etabins:
+ 
+        # Loop over all files to get sf
+        _sf = 0
+        for _f, _f_w in _files.iteritems():
+          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+
+        # Add eta if statement
+        _eta_min, _eta_max = _etab.split(',')
+        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+        # _code += '    {\n' # opening bracket
+
+        _code += '      return {0};\n'.format(_sf)
+
+      # if eta not in any bin then return 1
+      _code += '    else\n      return 1;\n'
+
+      _code += '  }\n'
+
+    # case if pt > max pt and closing bracket for eta if statement
+    _code += '  else\n   return 1;\n'    
+    _code += '}\n'
 
     return _code
 
@@ -199,152 +348,173 @@ class WeightTool(object):
 
     MiscTool.Print('python_info', '\nCalled scale_factor_muon_trk_handler function.')
 
-    _code = self._scale_factor_muon_trk_C_writer()
-    self._save_C_code(self.weights['scale_factor_muon_trk']['C'], _code)
-
-  def _scale_factor_muon_trk_C_writer(self):
-
-    # function name
-    _code = 'double scale_factor_muon_trk( double SF, int lepton_pdgID)\n{\n'
-
-    # Add lepton type check
-    _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
-
-    # if eta not in any bin then return 0
-    _code += '  else\n    return SF; \n}'
-
-    return _code
-
-  def trigger_muon_handler(self):
-    ''' Function used to calculate single muon trigger efficiencies and store them as C function.'''
-
-    MiscTool.Print('python_info', '\nCalled trigger_muon_handler function.')
-
     try:
 
-      _path_input = self.weights['trigger_muon']['file']
-      _types    = self.weights['trigger_muon']['type']
+      _files = self.weights['scale_factor_muon_trk']['file']
+      _type  = self.weights['scale_factor_muon_trk']['type']
 
       # There are different number of two run intervals
       _input = {}
-      for _t in _types:
-        _input[_t] = eval(open(_path_input).read())[_t]['abseta_pt_DATA']
-
-      MiscTool.Print('analysis_info', 'Successfully Opened: ', _path_input)
+      
+      for _f in _files:
+        
+        _input[_f] = eval(open(_f).read())[_type]['pt_eta_ratio']
+        MiscTool.Print('analysis_info', 'Successfully Opened: ', _f)
 
     except Exception, e:
-      MiscTool.Print('error', 'Something is wrong with opening file{0}'.format(_path_input))
+      MiscTool.Print('error', 'Something is wrong with opening file{0}'.format(_f))
       raise
 
     # Get scale factors for all eta pt bins and all types, i.e. run intervals
     _scale_factors = {}
 
-    for _t in _types:
+    for _f, _sf in _input.iteritems():
 
-      _scale_factors[_t] = {}
+      _scale_factors[_f] = {}
 
-      for _etab, _ptbins in _input[_t].iteritems():
+      for _etab, _ptbins in _sf.iteritems():
         
         _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-        _scale_factors[_t][_eta_bin] = {}
+        _scale_factors[_f][_eta_bin] = {}
 
         for _ptb, _sf in _ptbins.iteritems():
 
           _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-          _scale_factors[_t][_eta_bin][_pt_bin] = _sf
+          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
 
-    # Create C function and save it
-    _code = self._trigger_muon_C_writer(_scale_factors)
-    self._save_C_code(self.weights['trigger_muon']['C'], _code)
+    _code = self._scale_factor_muon_trk_C_writer(_scale_factors)
+    self._save_C_code(self.weights['scale_factor_muon_trk']['C'], _code)
 
-  # Version which separates different runs
-  # def _trigger_muon_C_writer(self, scale_factors):
-  #   ''' This function is used to make C function using dictionary of scale factors.'''
+  def _scale_factor_muon_trk_C_writer(self, scale_factors):
 
-  #   # function name
-  #   _code = 'double trigger_muon(double eta, double pt, int lepton_pdgID, int run)\n{\n'
-
-  #   # Add lepton type check
-  #   _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
-
-  #   # Loop over all intervals(runs)
-  #   for _t, _sf in scale_factors.iteritems():
-
-  #     _run_min, _run_max = _t.split('Run')[1].split('_to_')
-
-  #     _code += '  if (run > {0} && run < {1})\n'.format(_run_min, _run_max)
-  #     _code += '  {\n' # opening bracket
-
-  #     # Loop over all sf
-  #     for _etab, _ptbins in scale_factors[_t].iteritems():
-        
-  #       # Add eta if statement
-  #       _eta_min, _eta_max = _etab.split(',')
-  #       _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
-  #       _code += '    {\n' # opening bracket
-
-  #       # Add pt if statements
-  #       for _ptb, _sf in _ptbins.iteritems():
-
-  #         _pt_min, _pt_max = _ptb.split(',')
-  #         _code += '      if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-  #         _code += '        return {0};\n'.format(_sf['value'])
-
-  #       # case if pt > max pt and closing bracket for eta if statement
-  #       _code += '      else\n        return 1;\n   }\n'
-
-  #     # if run not in any bin then return 1 but this should be checked
-  #     _code += '    else\n      return 1;\n}'
-
-  #   # if run not in any bin then return 1 but this should be checked
-  #   _code += '  else\n    return 1;\n}'
-
-  #   return _code
-
-  def _trigger_muon_C_writer(self, scale_factors):
-    ''' This function is used to make C function using dictionary of scale factors.'''
+    _files = self.weights['scale_factor_muon_trk']['file']
 
     # function name
-    _code = 'double trigger_muon(double eta, double pt, int lepton_pdgID)\n{\n'
+    _code = 'double scale_factor_muon_trk(double eta, double pt, int lepton_pdgID)\n{\n'
 
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # Both of them should have the same structure
-    D4p2 = 0.055 # IsoMu22_OR_IsoTkMu22_PtEtaBins_Run273158_to_274093
-    D4p3 = 0.945 # IsoMu22_OR_IsoTkMu22_PtEtaBins_Run274094_to_276097
+    # All files have the same structure so it is ok to just make one for loop
+    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
 
-    # Loop over all sf
-    for _etab, _ptbins in scale_factors['IsoMu22_OR_IsoTkMu22_PtEtaBins_Run273158_to_274093'].iteritems():
+      _pt_min, _pt_max = _ptb.split(',')
+      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+      _code += '  {\n' # opening bracket 
+
+      for _etab in _etabins:
+ 
+        # Loop over all files to get sf
+        _sf = 0
+        for _f, _f_w in _files.iteritems():
+          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+
+        # Add eta if statement
+        _eta_min, _eta_max = _etab.split(',')
+        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+        # _code += '    {\n' # opening bracket
+
+        _code += '      return {0};\n'.format(_sf)
+
+      # if eta not in any bin then return 1
+      _code += '    else\n      return 1;\n'
+
+      _code += '  }\n'
+
+    # case if pt > max pt and closing bracket for eta if statement
+    _code += '  else\n   return 1;\n'    
+    _code += '}\n'
+
+    return _code
+
+  def scale_factor_muon_trigger_handler(self):
+    ''' Function used to calculate single muon trigger efficiencies and store them as C function.'''
+
+    MiscTool.Print('python_info', '\nCalled scale_factor_muon_trigger_handler function.')
+
+    try:
+
+      _files = self.weights['scale_factor_muon_trigger']['file']
+      _type  = self.weights['scale_factor_muon_trigger']['type']
+
+      # There are different number of two run intervals
+      _input = {}
       
-      # Add eta if statement
-      _eta_min, _eta_max = _etab.split(',')
-      _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
-      _code += '    {\n' # opening bracket
+      for _f in _files:
+        
+        _input[_f] = eval(open(_f).read())[_type]['pt_abseta_ratio']
+        MiscTool.Print('analysis_info', 'Successfully Opened: ', _f)
 
-      # Add pt if statements
-      for _ptb, _sf in _ptbins.iteritems():
+    except Exception, e:
+      MiscTool.Print('error', 'Something is wrong with opening file{0}'.format(_f))
+      raise
 
-        IsoMu22_OR_IsoTkMu22_PtEtaBins_Run273158_to_274093_value = _sf['value']
-        IsoMu22_OR_IsoTkMu22_PtEtaBins_Run274094_to_276097_value = scale_factors['IsoMu22_OR_IsoTkMu22_PtEtaBins_Run274094_to_276097'][_etab][_ptb]['value']
+    # Get scale factors for all eta pt bins and all types, i.e. run intervals
+    _scale_factors = {}
 
-        _final_SF = IsoMu22_OR_IsoTkMu22_PtEtaBins_Run273158_to_274093_value*D4p2 + IsoMu22_OR_IsoTkMu22_PtEtaBins_Run274094_to_276097_value*D4p3
+    for _f, _sf in _input.iteritems():
 
-        _pt_min, _pt_max = _ptb.split(',')
-        _code += '      if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-        _code += '        return {0};\n'.format(_final_SF)
+      _scale_factors[_f] = {}
 
-      # case if pt > max pt and closing bracket for eta if statement
-      _code += '      else\n        return 1;\n   }\n'
+      for _etab, _ptbins in _sf.iteritems():
+        
+        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
+        _scale_factors[_f][_eta_bin] = {}
 
-    # if run not in any bin then return 1 but this should be checked
-    _code += '    else\n      return 1;\n}'
+        for _ptb, _sf in _ptbins.iteritems():
+
+          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
+          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+
+    # Create C function and save it
+    _code = self._scale_factor_muon_trigger_C_writer(_scale_factors)
+    self._save_C_code(self.weights['scale_factor_muon_trigger']['C'], _code)
+
+  def _scale_factor_muon_trigger_C_writer(self, scale_factors):
+    ''' This function is used to make C function using dictionary of scale factors.'''
+
+    _files = self.weights['scale_factor_muon_trigger']['file']
+
+    # function name
+    _code = 'double scale_factor_muon_trigger(double eta, double pt, int lepton_pdgID)\n{\n'
+
+    # Add lepton type check
+    _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
+
+    # All files have the same structure so it is ok to just make one for loop
+    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+
+      _pt_min, _pt_max = _ptb.split(',')
+      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+      _code += '  {\n' # opening bracket 
+
+      for _etab in _etabins:
+ 
+        # Loop over all files to get sf
+        _sf = 0
+        for _f, _f_w in _files.iteritems():
+          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+
+        # Add eta if statement
+        _eta_min, _eta_max = _etab.split(',')
+        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+        # _code += '    {\n' # opening bracket
+
+        _code += '      return {0};\n'.format(_sf)
+
+      # if eta not in any bin then return 1
+      _code += '    else\n      return 1;\n'
+
+      _code += '  }\n'
+
+    # case if pt > max pt and closing bracket for eta if statement
+    _code += '  else\n   return 1;\n'    
+    _code += '}\n'
 
     return _code
 
   # ----------------- Electrons ---------------------
-  # Not sure of usage
-  def scale_factor_electron_handler(self):
+  def not_used_scale_factor_electron_handler(self):
     ''' Function used to calculate electron scale factors and store them as C function.'''
 
     MiscTool.Print('python_info', '\nCalled scale_factor_electron_handler function.')
@@ -379,7 +549,7 @@ class WeightTool(object):
     _code = self._scale_factor_electron_C_writer(_scale_factors)
     self._save_C_code(self.weights['scale_factor_electron']['C'], _code)
 
-  def _scale_factor_electron_C_writer(self, scale_factors):
+  def not_used_scale_factor_electron_C_writer(self, scale_factors):
     ''' This function is used to make C function using dictionary of scale factors.'''
 
     # function name
@@ -419,9 +589,8 @@ class WeightTool(object):
     try:
 
       _path_input = self.weights['scale_factor_electron_ID']['file']
-      _type     = self.weights['scale_factor_electron_ID']['type']
-
-      _input = eval(open(_path_input).read())[_type]['pt_eta_ratio']
+      _type       = self.weights['scale_factor_electron_ID']['type']
+      _input      = eval(open(_path_input).read())[_type]['eta_pt_ratio']
 
       MiscTool.Print('analysis_info', 'Successfully Opened: ', _path_input)
 
@@ -460,18 +629,18 @@ class WeightTool(object):
       
       # Add eta if statement
       _eta_min, _eta_max = _etab.split(',')
-      _code += '  if (pt > {0} && pt < {1})\n'.format(_eta_min, _eta_max)
+      _code += '  if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
       _code += '  {\n' # opening bracket
 
       # Add pt if statements
       for _ptb, _sf in _ptbins.iteritems():
 
         _pt_min, _pt_max = _ptb.split(',')
-        _code += '    if (eta > {0} && eta < {1})\n'.format(_pt_min, _pt_max)
+        _code += '    if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
         _code += '      return {0};\n'.format(_sf['value'])
 
       # case if pt > max pt and closing bracket for eta if statement
-      _code += '    else\n      return 1;\n }\n'
+      _code += '    else\n      return 1;\n  }\n'
 
     # if eta not in any bin then return 0
     _code += '  else\n    return 1; \n}'
@@ -486,9 +655,8 @@ class WeightTool(object):
     try:
 
       _path_input = self.weights['scale_factor_electron_trk']['file']
-      _type     = self.weights['scale_factor_electron_trk']['type']
-
-      _input = eval(open(_path_input).read())[_type]['eta_pt_ratio']
+      _type       = self.weights['scale_factor_electron_trk']['type']
+      _input      = eval(open(_path_input).read())[_type]['eta_pt_ratio']
 
       MiscTool.Print('analysis_info', 'Successfully Opened: ', _path_input)
 
@@ -538,22 +706,22 @@ class WeightTool(object):
         _code += '      return {0};\n'.format(_sf['value'])
 
       # case if pt > max pt and closing bracket for eta if statement
-      _code += '    else\n      return 1;\n }\n'
+      _code += '    else\n      return 1;\n  }\n'
 
     # if eta not in any bin then return 0
     _code += '  else\n    return 1; \n}'
 
     return _code
 
-  def trigger_electron_handler(self):
+  def scale_factor_electron_trigger_handler(self):
     ''' Function used to calculate electron trigger efficiencies and store them as C function.'''
 
-    MiscTool.Print('python_info', '\nCalled trigger_electron_handler function.')
+    MiscTool.Print('python_info', '\nCalled scale_factor_electron_trigger_handler function.')
 
     try:
 
-      _path_input = self.weights['trigger_electron']['file']
-      _type     = self.weights['trigger_electron']['type']
+      _path_input = self.weights['scale_factor_electron_trigger']['file']
+      _type       = self.weights['scale_factor_electron_trigger']['type']
 
       _input = eval(open(_path_input).read())[_type]['eta_pt_ratio']
 
@@ -569,6 +737,7 @@ class WeightTool(object):
     for _etab, _ptbins in _input.iteritems():
       
       _eta_bin = _etab.split('[', 1)[1].split(']')[0]
+
       _scale_factors[_eta_bin] = {}
 
       for _ptb, _sf in _ptbins.iteritems():
@@ -577,15 +746,15 @@ class WeightTool(object):
         _scale_factors[_eta_bin][_pt_bin] = _sf
 
     # Create C function and save it
-    _code = self._trigger_electron_C_writer(_scale_factors)
-    self._save_C_code(self.weights['trigger_electron']['C'], _code)
+    _code = self._scale_factor_electron_trigger_C_writer(_scale_factors)
+    self._save_C_code(self.weights['scale_factor_electron_trigger']['C'], _code)
 
-  def _trigger_electron_C_writer(self, scale_factors):
+  def _scale_factor_electron_trigger_C_writer(self, scale_factors):
     
     ''' This function is used to make C function using dictionary of scale factors.'''
 
     # function name
-    _code = 'double trigger_electron(double eta, double pt, int lepton_pdgID )\n{\n'
+    _code = 'double scale_factor_electron_trigger(double eta, double pt, int lepton_pdgID )\n{\n'
 
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 11)\n    return 1;\n\n' 
@@ -606,17 +775,47 @@ class WeightTool(object):
         _code += '      return {0};\n'.format(_sf['value'])
 
       # case if pt > max pt and closing bracket for eta if statement
-      _code += '    else\n      return 1;\n }\n'
+      _code += '    else\n      return 1;\n  }\n'
 
     # if eta not in any bin then return 0
     _code += '  else\n    return 1; \n}'
 
     return _code
 
-  ###########################################################
+  # ----------------- bb Tag ---------------------
+  def scale_factor_bbtag_handler(self):
 
-  def sample_overlap(self):
-    pass
+    # Create C function and save it
+    _code = self._scale_factor_bbtag_C_writer()
+    self._save_C_code(self.weights['scale_factor_bb_tag']['C'], _code)
+
+  def _scale_factor_bbtag_C_writer(self):
+
+    ''' This function is used to make C function using dictionary of scale factors.'''
+
+    # function name
+    _code = 'double scale_factor_bb_tag( double pt )\n{\n'
+
+    _code += '  if (pt > {0} && pt < {1})\n'.format( '250', '350')
+    _code += '  {\n' # opening bracket
+    _code += '    return {0};\n'.format(0.92)
+    _code += '  }\n' # closing bracket
+
+    _code += '  if (pt > {0} && pt < {1})\n'.format( '350', '430')
+    _code += '  {\n' # opening bracket
+    _code += '    return {0};\n'.format(1.01)
+    _code += '  }\n' # closing bracket
+
+    _code += '  if (pt > {0} && pt < {1})\n'.format( '430', '840')
+    _code += '  {\n' # opening bracket
+    _code += '    return {0};\n'.format(0.92)
+    _code += '  }\n' # closing bracket
+
+    _code += '  else\n      return 1;\n  }\n'
+
+    return _code
+
+  ###########################################################
 
   def get_total_number_of_events(self):
     ''' Get the total (weighted) number of events using files without any preselection. '''

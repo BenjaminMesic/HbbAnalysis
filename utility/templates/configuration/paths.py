@@ -1,5 +1,6 @@
-{
-  'path_samples'                : '<path_samples>',
-  'path_samples_preselection'   : '<path_samples_preselection>',
-  'path_cache'                  : '<path_cache>'
-}
+path_working_directory          = '<path_working_directory>'
+path_analysis_working_directory = '<path_analysis_working_directory>'
+path_samples                    = '<path_samples>'
+path_samples_user_defined       = '<path_samples_user_defined>'
+path_cache                      = '<path_cache>'
+path_voms_proxy                 = '<path_voms_proxy>'
