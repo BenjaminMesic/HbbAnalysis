@@ -15,20 +15,20 @@ if __name__ == '__main__':
   # # -------------- Setup C++ functions -------------------------
   # weight.pile_up_handler() # Not used for some time now. There is a variable in ntuple
 
-  weight.scale_factor_muon_ID_handler()
-  weight.scale_factor_muon_iso_handler()
-  weight.scale_factor_muon_trk_handler()
-  weight.scale_factor_muon_trigger_handler()
+  # weight.scale_factor_muon_ID_handler()
+  # weight.scale_factor_muon_iso_handler()
+  # weight.scale_factor_muon_trk_handler()
+  # weight.scale_factor_muon_trigger_handler()
 
-  weight.scale_factor_electron_ID_handler()
-  weight.scale_factor_electron_trk_handler()
-  weight.scale_factor_electron_trigger_handler()
+  # weight.scale_factor_electron_ID_handler()
+  # weight.scale_factor_electron_trk_handler()
+  # weight.scale_factor_electron_trigger_handler()
 
-  # weight.scale_factor_bbtag_handler()
+  # # weight.scale_factor_bbtag_handler()
 
-  # # ----------- Get dictionary with total weighted number of events -------------
-  # weight.get_total_number_of_events()
+  # # # ----------- Get dictionary with total weighted number of events -------------
+  # # weight.get_total_number_of_events()
 
-  # # --------------------------- Tests -------------------
-  # print WeightTool.WeightTool.weight_handler(configuration.weights.weights)
-  # weight._load_C_code()
+  # # # --------------------------- Tests -------------------
+  # # print WeightTool.WeightTool.weight_handler(configuration.weights.weights)
+  # # weight._load_C_code()

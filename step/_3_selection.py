@@ -13,9 +13,9 @@ if __name__ == '__main__':
   # Create instance of FileTool
   selection = SelectionTool.SelectionTool(configuration)
 
-  # ----------------------------------------
-  # Apply selection
-  selection.make_files_all_samples()
+  # # ----------------------------------------
+  # # Apply selection
+  # selection.make_files_all_samples()
 
   # # Merge files
   # selection.merge_files_all_samples()

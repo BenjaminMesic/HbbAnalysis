@@ -13,4 +13,4 @@ if __name__ == '__main__':
   # ----------- Here starts task ----------------
   d = DataCardTool.DataCardTool( configuration)
   d.get_yields_and_templates()
-  d.make()
+  # d.make()
