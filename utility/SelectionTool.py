@@ -49,6 +49,9 @@ class SelectionTool(object):
     else:
       self.path_samples = self.path_samples_location
 
+    # Load C functions
+    ROOT.gROOT.ProcessLine('.L {0}/utility/utility_C.h'.format(self.path_working_directory))
+
     # Convert IDs to samples
     self.list_of_samples    = MiscTool.ID_sample_dictionary( self.list_of_IDs, configuration.samples)
     self.info_samples       = configuration.samples.samples_list
@@ -77,8 +80,8 @@ class SelectionTool(object):
     # Check if one wants to apply final selection on merged file after L selection
     if self.task_selection_on_merged_files and not self.work_with_Ls_only:
 
-      _input_hash   = hashlib.md5( ''.join(self.selection[:-1]) ).hexdigest()
-      _output_hash  = hashlib.md5( ''.join(self.selection) ).hexdigest()
+      _input_hash   = hashlib.md5( ' && '.join(self.selection[:-1]) ).hexdigest()
+      _output_hash  = hashlib.md5( ' && '.join(self.selection) ).hexdigest()
  
       _input_file_name  = os.path.join( self.path_cache, sample + '_' + _input_hash   + '.root' ) 
       _output_file_name = os.path.join( self.path_cache, sample + '_' + _output_hash  + '.root' )
@@ -130,15 +133,15 @@ class SelectionTool(object):
             # As input use original file
             if _n == 0:
 
-              _output_hash = hashlib.md5( ''.join(self.selection[0:_n+1]) ).hexdigest()
+              _output_hash = hashlib.md5( ' && '.join(self.selection[0:_n+1]) ).hexdigest()
 
               _input  = _f.replace( self.path_samples_location, self.path_samples) 
               _output = _f.replace( self.path_samples_location, self.path_samples).replace( self.path_samples, self.path_cache).replace('tree_', 'tree_{0}_'.format(_output_hash))
 
             else:
 
-              _input_hash  = hashlib.md5( ''.join(self.selection[0:_n]) ).hexdigest()
-              _output_hash = hashlib.md5( ''.join(self.selection[0:_n+1]) ).hexdigest()
+              _input_hash  = hashlib.md5( ' && '.join(self.selection[0:_n]) ).hexdigest()
+              _output_hash = hashlib.md5( ' && '.join(self.selection[0:_n+1]) ).hexdigest()
 
               _input  = _f.replace( self.path_samples_location, self.path_samples).replace( self.path_samples, self.path_cache).replace('tree_', 'tree_{0}_'.format(_input_hash))
               _output = _f.replace( self.path_samples_location, self.path_samples).replace( self.path_samples, self.path_cache).replace('tree_', 'tree_{0}_'.format(_output_hash))
@@ -189,7 +192,7 @@ class SelectionTool(object):
     
     MiscTool.Print('python_info', '\nCalled merge_files function.')  
 
-    _final_hash = hashlib.md5( ''.join(self.selection) ).hexdigest()
+    _final_hash = hashlib.md5( ' && '.join(self.selection) ).hexdigest()
 
     # name of merged root file      
     _file_name          = sample + '_' + _final_hash + '.root'

@@ -1,9 +1,18 @@
 
 # Name of the task which is running
-task_name                       = 'test'
+# task_name                       = 'Wmn_CR_LF'
+# task_name                       = 'Wen_CR_LF'
+# task_name                       = 'Wmn_CR_TT'
+# task_name                       = 'Wen_CR_TT'
+# task_name                       = 'Wmn_CR_HF' 
+# task_name                       = 'Wen_CR_HF'
+# task_name                       = 'Wmn_SR'
+# task_name                       = 'Wen_SR'
+
+task_name                         = 'test'
 
 # Just analysis luminosity
-luminosity                      = 36400 #12900, # pb-1
+luminosity                      = 35900 #36400 #12900, # pb-1
 # Force all jobs even if the files already exist
 force_all                       = False
 # Send job either batch or interactively
@@ -13,11 +22,13 @@ batch                           = True
 # Use user created files
 user_defined_files              = True
 # Merge files after Ls
-work_with_Ls_only               = True
+work_with_Ls_only               = False
 # Do final/task selection on merged files if they exist
-task_selection_on_merged_files  = False
+task_selection_on_merged_files  = True
 
-tag = '13TeV'
+apply_CR_SF                     = False
+
+tag = '13 TeV'
 
 # -------- Options for copying files ---------
 copy_protocol = {

@@ -17,12 +17,12 @@ class SampleTool(object):
     MiscTool.Print('python_info', '\nCreated instance of SampleTool class')
 
     self.force_all        = configuration.general.force_all
+    self.postfit          = configuration.general.postfit_plot
     if task:
       self.task_name      = task
     else:
       self.task_name      = configuration.general.task_name
     self.luminosity       = configuration.general.luminosity
-
 
     self.split_samples    = configuration.plots.task[self.task_name]['split_samples']
 
@@ -40,11 +40,6 @@ class SampleTool(object):
     self.selection                        = self.selection_L + [configuration.selection.task_definitions[self.task_name]]
     self.selection_subsamples             = configuration.selection.subsamples
 
-    # CR scale factor config
-    self.apply_SF_CR                      = configuration.general.apply_CR_SF
-    self.CR_SF                            = configuration.weights.CR_SF
-    self.CR_SF_process_def                = configuration.datacards.datacard['definitions']
-
     # Load C functions
     ROOT.gROOT.ProcessLine('.L {0}/utility/utility_C.h'.format(self.path_working_directory))
     # print ROOT.deltaPhi(1,2)
@@ -59,6 +54,7 @@ class SampleTool(object):
     # ------ Weights -------
     self.weights          = configuration.weights.weights
     self.load_weight_C_functions()
+    self.datacards        = configuration.datacards.datacard
 
     # ------ Samples -------
     self.samples      = {}
@@ -101,18 +97,39 @@ class SampleTool(object):
 
           # Add all the subsamples
           for _ss in self.info_samples[_s]['sub']:
-                        
+            
+            _sf_type = self.datacards['definitions'][_ss]
+
+            if _sf_type in self.datacards['SF'] and self.postfit:
+              _sf = self.datacards['SF'][_sf_type]
+            else:
+              _sf = 1.0
+            
             self.samples[_ss] = Sample( _s, _ss, self.info_samples[_s]['types'], self.info_samples[_s]['xsec'])
 
         # Just add sample as it is
         else:
           
-          self.samples[self.info_samples[_s]['ID']] = Sample( _s, self.info_samples[_s]['ID'], self.info_samples[_s]['types'], self.info_samples[_s]['xsec'])
+          _sf_type = self.datacards['definitions'][self.info_samples[_s]['ID']]
+
+          if _sf_type in self.datacards['SF'] and self.postfit:
+            _sf = self.datacards['SF'][_sf_type]
+          else:
+            _sf = 1.0          
+
+          self.samples[self.info_samples[_s]['ID']] = Sample( _s, self.info_samples[_s]['ID'], self.info_samples[_s]['types'], self.info_samples[_s]['xsec']*_sf)
 
     # Just add samples without spliting
     else:
 
       for _s in self.list_of_all_samples:
+
+        _sf_type = self.datacards['definitions'][self.info_samples[_s]['ID']]
+
+        if _sf_type in self.datacards['SF'] and self.postfit:
+          _sf = self.datacards['SF'][_sf_type]
+        else:
+          _sf = 1.0   
 
         self.samples[self.info_samples[_s]['ID']] = Sample( _s, self.info_samples[_s]['ID'], self.info_samples[_s]['types'], self.info_samples[_s]['xsec'])
 
@@ -120,8 +137,8 @@ class SampleTool(object):
 
     MiscTool.Print('python_info', '\nCalled set_samples_files function.')  
 
-    _final_hash = hashlib.md5( ' && '.join(self.selection) ).hexdigest()
-    _l_hash     = hashlib.md5( ' && '.join(self.selection_L) ).hexdigest()
+    _final_hash = hashlib.md5( ''.join(self.selection) ).hexdigest()
+    _l_hash     = hashlib.md5( ''.join(self.selection_L) ).hexdigest()
 
     for _s in self.samples:
 
@@ -135,7 +152,7 @@ class SampleTool(object):
         _input  = os.path.join( self.path_cache, self.samples[_s].name + '_' + _final_hash + '.root')
         _output = os.path.join( self.path_cache, self.samples[_s].name + '_' + _final_hash + '_{0}.root'.format(_s))
         _cut    = self.selection_subsamples[_s.split('_')[-1]]
-        # self.samples[_s].selection += ' && ' + _cut # Sept 2, 2018 sync with datacard tool
+        self.samples[_s].selection += ' && ' + _cut
 
         if not FileTool.FileTool.check_if_file_ok(_output):
           FileTool.FileTool.simple_trim_files( _input, _output, _cut)
@@ -202,11 +219,6 @@ class SampleTool(object):
       if self.samples[_s].types == 'mc':
 
         _x_sec  = self.samples[_s].xsec
-
-        _process = self.CR_SF_process_def[self.samples[_s].ID]
-        if self.apply_SF_CR and _process in self.CR_SF:           
-          _x_sec *= self.CR_SF[_process]
-          MiscTool.Print('analysis_info', 'Applying SF_CR', self.CR_SF[_process])
 
         # Default normalization
         try:

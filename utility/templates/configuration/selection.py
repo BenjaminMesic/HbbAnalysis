@@ -1,5 +1,5 @@
 task = {
-  'test'        : [ 'L0', 'L1', 'L2', 'L3'],
+  'test'        : [ 'L0', 'L1'],
   'Wen_full'    : [ 'L0', 'L1'],
   'Wmn_full'    : [ 'L0', 'L1'],
   'Wen_110_140' : [ 'L0', 'L1'],
@@ -7,10 +7,8 @@ task = {
 }
 
 hierarchy   = {
-  'L0' : '(Vtype==2 || Vtype==3) && nFatjetAK08ungroomed > 0 && nSubjetAK08softdrop > 0',
-  'L1' : 'boost_H_index != -1 && boost_H_bbv2[boost_H_index] > 0.5',
-  'L2' : 'boost_H_bbv2[boost_H_index] > 0.8',
-  'L3' : 'boost_2nd_b < 0.05'
+  'L0' : '(Vtype==2 || Vtype==3) && nFatjetAK08ungroomed > 0',
+  'L1' : 'boost_HC_index != -1 && boost_H_bbv2[boost_HC_index] > 0.5'
 }
 
 subsamples  = {

@@ -16,4 +16,4 @@ if __name__ == '__main__':
   # Initalize plots
   p = PlotTool.PlotTool( configuration, sample_tool)
   
-  # p.plot()
+  p.plot()

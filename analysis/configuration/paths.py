@@ -1,0 +1,6 @@
+path_working_directory          = '/users/bmesic/WorkingDirectory/2018/01_Hbb/CMSSW_9_4_0_pre1/src/HbbAnalysis'
+path_analysis_working_directory = '/users/bmesic/WorkingDirectory/2018/01_Hbb/CMSSW_9_4_0_pre1/src/HbbAnalysis/analysis/Wlv'
+path_samples                    = '/STORE/Hbb/2017_04_VHBBHeppyV25'
+path_samples_user_defined       = '/STORE/Hbb/2018_01_VHBBHeppyV25_Wlv_user_defined'
+path_cache                      = '/STORE/Hbb/2018_01_VHBBHeppyV25_Wlv_cache'
+path_voms_proxy                 = '<path_voms_proxy>'

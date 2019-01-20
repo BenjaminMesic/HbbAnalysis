@@ -204,17 +204,59 @@ class WeightTool(object):
 
       _scale_factors[_f] = {}
 
-      for _etab, _ptbins in _sf.iteritems():
+      for _p, _e in _sf.iteritems():
         
-        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-        _scale_factors[_f][_eta_bin] = {}
+        _ptbin = _p.split(':')[1][1:-1]
 
-        for _ptb, _sf in _ptbins.iteritems():
+        _scale_factors[_f][_ptbin] = {}
 
-          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+        for _ee, _sf in _e.iteritems():
 
-    _code = self._scale_factor_muon_ID_C_writer( _scale_factors)
+          _etabin = _ee.split(':')[1][1:-1]
+
+          _scale_factors[_f][_ptbin][_etabin] = _sf['value']
+
+    # Add them together
+    _scale_factors_combined = {}
+
+    # All files have the same structure so it is ok to just make one for loop
+    _starting_file = _scale_factors.keys()[0]
+
+    # Loop over pt bins
+    for _p, _e in _scale_factors[_starting_file].iteritems():
+
+      _scale_factors_combined[_p] = {}
+
+      # Loop over eta bins
+      for _ee in _e:
+
+        _sf = float(_scale_factors[_starting_file][_p][_ee])*float(_files[_starting_file])
+
+        # Loop over all files to add all the others SFs
+        for _f, _f_w in _files.iteritems():
+          
+          if _starting_file != _f:
+
+            _sf += float(_scale_factors[_f][_p][_ee])*float(_f_w)
+
+        _scale_factors_combined[_p][_ee] = _sf
+
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _p, _e in _scale_factors_combined.iteritems():
+      
+      _ptbin = float(_p.split(',')[1])
+
+      if _ptbin > _max_pt_bin_value:
+        _max_pt_bin = _p
+        _max_pt_bin_value = _ptbin
+
+    _scale_factors_combined['overflow'] = _scale_factors_combined[_max_pt_bin]
+
+    _code = self._scale_factor_muon_ID_C_writer( _scale_factors_combined)
+
     self._save_C_code(self.weights['scale_factor_muon_ID']['C'], _code)
 
   def _scale_factor_muon_ID_C_writer(self, scale_factors):
@@ -227,35 +269,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # All files have the same structure so it is ok to just make one for loop
-    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+    for _p, _e in scale_factors.iteritems():
 
-      _pt_min, _pt_max = _ptb.split(',')
-      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-      _code += '  {\n' # opening bracket 
+      if not _p == 'overflow':
 
-      for _etab in _etabins:
- 
-        # Loop over all files to get sf
-        _sf = 0
-        for _f, _f_w in _files.iteritems():
-          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+        _pt_min, _pt_max = _p.split(',')
+        _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+        _code += '  {\n' # opening bracket 
 
-        # Add eta if statement
-        _eta_min, _eta_max = _etab.split(',')
-        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
-        # _code += '    {\n' # opening bracket
+        for _ee, _sf in _e.iteritems():
+          _eta_min, _eta_max = _ee.split(',')
+          _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+          _code += '      return {0};\n'.format(_sf)
+        _code += '  }\n'
 
-        _code += '      return {0};\n'.format(_sf)
-
-      # if eta not in any bin then return 1
-      _code += '    else\n      return 1;\n'
-
-      _code += '  }\n'
-
-    # case if pt > max pt and closing bracket for eta if statement
-    _code += '  else\n   return 1;\n'    
-    _code += '}\n'
+    # Add overflow bin
+    _code += '  else\n' 
+    _code += '  {\n' # opening bracket 
+    
+    for _ee, _sf in scale_factors['overflow'].iteritems():
+      _eta_min, _eta_max = _ee.split(',')
+      _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+      _code += '      return {0};\n'.format(_sf)
+    _code += '  }\n'
+    _code += '}'
 
     return _code
 
@@ -288,17 +325,59 @@ class WeightTool(object):
 
       _scale_factors[_f] = {}
 
-      for _etab, _ptbins in _sf.iteritems():
+      for _p, _e in _sf.iteritems():
         
-        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-        _scale_factors[_f][_eta_bin] = {}
+        _ptbin = _p.split(':')[1][1:-1]
 
-        for _ptb, _sf in _ptbins.iteritems():
+        _scale_factors[_f][_ptbin] = {}
 
-          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+        for _ee, _sf in _e.iteritems():
 
-    _code = self._scale_factor_muon_iso_C_writer( _scale_factors)
+          _etabin = _ee.split(':')[1][1:-1]
+
+          _scale_factors[_f][_ptbin][_etabin] = _sf['value']
+
+    # Add them together
+    _scale_factors_combined = {}
+
+    # All files have the same structure so it is ok to just make one for loop
+    _starting_file = _scale_factors.keys()[0]
+
+    # Loop over pt bins
+    for _p, _e in _scale_factors[_starting_file].iteritems():
+
+      _scale_factors_combined[_p] = {}
+
+      # Loop over eta bins
+      for _ee in _e:
+
+        _sf = float(_scale_factors[_starting_file][_p][_ee])*float(_files[_starting_file])
+
+        # Loop over all files to add all the others SFs
+        for _f, _f_w in _files.iteritems():
+          
+          if _starting_file != _f:
+
+            _sf += float(_scale_factors[_f][_p][_ee])*float(_f_w)
+
+        _scale_factors_combined[_p][_ee] = _sf
+
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _p, _e in _scale_factors_combined.iteritems():
+      
+      _ptbin = float(_p.split(',')[1])
+
+      if _ptbin > _max_pt_bin_value:
+        _max_pt_bin = _p
+        _max_pt_bin_value = _ptbin
+
+    _scale_factors_combined['overflow'] = _scale_factors_combined[_max_pt_bin]
+
+    _code = self._scale_factor_muon_iso_C_writer( _scale_factors_combined)
+
     self._save_C_code(self.weights['scale_factor_muon_iso']['C'], _code)
 
   def _scale_factor_muon_iso_C_writer(self, scale_factors ):
@@ -311,35 +390,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # All files have the same structure so it is ok to just make one for loop
-    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+    for _p, _e in scale_factors.iteritems():
 
-      _pt_min, _pt_max = _ptb.split(',')
-      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-      _code += '  {\n' # opening bracket 
+      if not _p == 'overflow':
 
-      for _etab in _etabins:
- 
-        # Loop over all files to get sf
-        _sf = 0
-        for _f, _f_w in _files.iteritems():
-          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+        _pt_min, _pt_max = _p.split(',')
+        _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+        _code += '  {\n' # opening bracket 
 
-        # Add eta if statement
-        _eta_min, _eta_max = _etab.split(',')
-        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
-        # _code += '    {\n' # opening bracket
+        for _ee, _sf in _e.iteritems():
+          _eta_min, _eta_max = _ee.split(',')
+          _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+          _code += '      return {0};\n'.format(_sf)
+        _code += '  }\n'
 
-        _code += '      return {0};\n'.format(_sf)
-
-      # if eta not in any bin then return 1
-      _code += '    else\n      return 1;\n'
-
-      _code += '  }\n'
-
-    # case if pt > max pt and closing bracket for eta if statement
-    _code += '  else\n   return 1;\n'    
-    _code += '}\n'
+    # Add overflow bin
+    _code += '  else\n' 
+    _code += '  {\n' # opening bracket 
+    
+    for _ee, _sf in scale_factors['overflow'].iteritems():
+      _eta_min, _eta_max = _ee.split(',')
+      _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+      _code += '      return {0};\n'.format(_sf)
+    _code += '  }\n'
+    _code += '}'
 
     return _code
 
@@ -372,17 +446,58 @@ class WeightTool(object):
 
       _scale_factors[_f] = {}
 
-      for _etab, _ptbins in _sf.iteritems():
+      for _p, _e in _sf.iteritems():
         
-        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-        _scale_factors[_f][_eta_bin] = {}
+        _ptbin = _p.split(':')[1][1:-1]
 
-        for _ptb, _sf in _ptbins.iteritems():
+        _scale_factors[_f][_ptbin] = {}
 
-          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+        for _ee, _sf in _e.iteritems():
 
-    _code = self._scale_factor_muon_trk_C_writer(_scale_factors)
+          _etabin = _ee.split(':')[1][1:-1]
+
+          _scale_factors[_f][_ptbin][_etabin] = _sf['value']
+
+    # Add them together
+    _scale_factors_combined = {}
+
+    # All files have the same structure so it is ok to just make one for loop
+    _starting_file = _scale_factors.keys()[0]
+
+    # Loop over pt bins
+    for _p, _e in _scale_factors[_starting_file].iteritems():
+
+      _scale_factors_combined[_p] = {}
+
+      # Loop over eta bins
+      for _ee in _e:
+
+        _sf = float(_scale_factors[_starting_file][_p][_ee])*float(_files[_starting_file])
+
+        # Loop over all files to add all the others SFs
+        for _f, _f_w in _files.iteritems():
+          
+          if _starting_file != _f:
+
+            _sf += float(_scale_factors[_f][_p][_ee])*float(_f_w)
+
+        _scale_factors_combined[_p][_ee] = _sf
+
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _p, _e in _scale_factors_combined.iteritems():
+      
+      _ptbin = float(_p.split(',')[1])
+
+      if _ptbin > _max_pt_bin_value:
+        _max_pt_bin = _p
+        _max_pt_bin_value = _ptbin
+
+    _scale_factors_combined['overflow'] = _scale_factors_combined[_max_pt_bin]
+
+    _code = self._scale_factor_muon_trk_C_writer(_scale_factors_combined)
     self._save_C_code(self.weights['scale_factor_muon_trk']['C'], _code)
 
   def _scale_factor_muon_trk_C_writer(self, scale_factors):
@@ -395,35 +510,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # All files have the same structure so it is ok to just make one for loop
-    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+    for _p, _e in scale_factors.iteritems():
 
-      _pt_min, _pt_max = _ptb.split(',')
-      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-      _code += '  {\n' # opening bracket 
+      if not _p == 'overflow':
 
-      for _etab in _etabins:
- 
-        # Loop over all files to get sf
-        _sf = 0
-        for _f, _f_w in _files.iteritems():
-          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+        _pt_min, _pt_max = _p.split(',')
+        _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+        _code += '  {\n' # opening bracket 
 
-        # Add eta if statement
-        _eta_min, _eta_max = _etab.split(',')
-        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
-        # _code += '    {\n' # opening bracket
+        for _ee, _sf in _e.iteritems():
+          _eta_min, _eta_max = _ee.split(',')
+          _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+          _code += '      return {0};\n'.format(_sf)
+        _code += '  }\n'
 
-        _code += '      return {0};\n'.format(_sf)
-
-      # if eta not in any bin then return 1
-      _code += '    else\n      return 1;\n'
-
-      _code += '  }\n'
-
-    # case if pt > max pt and closing bracket for eta if statement
-    _code += '  else\n   return 1;\n'    
-    _code += '}\n'
+    # Add overflow bin
+    _code += '  else\n' 
+    _code += '  {\n' # opening bracket 
+    
+    for _ee, _sf in scale_factors['overflow'].iteritems():
+      _eta_min, _eta_max = _ee.split(',')
+      _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+      _code += '      return {0};\n'.format(_sf)
+    _code += '  }\n'
+    _code += '}'
 
     return _code
 
@@ -456,18 +566,59 @@ class WeightTool(object):
 
       _scale_factors[_f] = {}
 
-      for _etab, _ptbins in _sf.iteritems():
+      for _p, _e in _sf.iteritems():
         
-        _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-        _scale_factors[_f][_eta_bin] = {}
+        _ptbin = _p.split(':')[1][1:-1]
 
-        for _ptb, _sf in _ptbins.iteritems():
+        _scale_factors[_f][_ptbin] = {}
 
-          _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-          _scale_factors[_f][_eta_bin][_pt_bin] = _sf
+        for _ee, _sf in _e.iteritems():
+
+          _etabin = _ee.split(':')[1][1:-1]
+
+          _scale_factors[_f][_ptbin][_etabin] = _sf['value']
+
+    # Add them together
+    _scale_factors_combined = {}
+
+    # All files have the same structure so it is ok to just make one for loop
+    _starting_file = _scale_factors.keys()[0]
+
+    # Loop over pt bins
+    for _p, _e in _scale_factors[_starting_file].iteritems():
+
+      _scale_factors_combined[_p] = {}
+
+      # Loop over eta bins
+      for _ee in _e:
+
+        _sf = float(_scale_factors[_starting_file][_p][_ee])*float(_files[_starting_file])
+
+        # Loop over all files to add all the others SFs
+        for _f, _f_w in _files.iteritems():
+          
+          if _starting_file != _f:
+
+            _sf += float(_scale_factors[_f][_p][_ee])*float(_f_w)
+
+        _scale_factors_combined[_p][_ee] = _sf
+
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _p, _e in _scale_factors_combined.iteritems():
+      
+      _ptbin = float(_p.split(',')[1])
+
+      if _ptbin > _max_pt_bin_value:
+        _max_pt_bin = _p
+        _max_pt_bin_value = _ptbin
+
+    _scale_factors_combined['overflow'] = _scale_factors_combined[_max_pt_bin]
 
     # Create C function and save it
-    _code = self._scale_factor_muon_trigger_C_writer(_scale_factors)
+    _code = self._scale_factor_muon_trigger_C_writer(_scale_factors_combined)
     self._save_C_code(self.weights['scale_factor_muon_trigger']['C'], _code)
 
   def _scale_factor_muon_trigger_C_writer(self, scale_factors):
@@ -481,35 +632,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 13)\n    return 1;\n\n' 
 
-    # All files have the same structure so it is ok to just make one for loop
-    for _ptb, _etabins in scale_factors[scale_factors.keys()[0]].iteritems():
+    for _p, _e in scale_factors.iteritems():
 
-      _pt_min, _pt_max = _ptb.split(',')
-      _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-      _code += '  {\n' # opening bracket 
+      if not _p == 'overflow':
 
-      for _etab in _etabins:
- 
-        # Loop over all files to get sf
-        _sf = 0
-        for _f, _f_w in _files.iteritems():
-          _sf += float(scale_factors[_f][_ptb][_etab]['value'])*float(_f_w)
+        _pt_min, _pt_max = _p.split(',')
+        _code += '  if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
+        _code += '  {\n' # opening bracket 
 
-        # Add eta if statement
-        _eta_min, _eta_max = _etab.split(',')
-        _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
-        # _code += '    {\n' # opening bracket
+        for _ee, _sf in _e.iteritems():
+          _eta_min, _eta_max = _ee.split(',')
+          _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+          _code += '      return {0};\n'.format(_sf)
+        _code += '  }\n'
 
-        _code += '      return {0};\n'.format(_sf)
-
-      # if eta not in any bin then return 1
-      _code += '    else\n      return 1;\n'
-
-      _code += '  }\n'
-
-    # case if pt > max pt and closing bracket for eta if statement
-    _code += '  else\n   return 1;\n'    
-    _code += '}\n'
+    # Add overflow bin
+    _code += '  else\n' 
+    _code += '  {\n' # opening bracket 
+    
+    for _ee, _sf in scale_factors['overflow'].iteritems():
+      _eta_min, _eta_max = _ee.split(',')
+      _code += '    if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
+      _code += '      return {0};\n'.format(_sf)
+    _code += '  }\n'
+    _code += '}'
 
     return _code
 
@@ -601,15 +747,36 @@ class WeightTool(object):
     # Get scale factors for all eta pt bins
     _scale_factors = {}
 
-    for _etab, _ptbins in _input.iteritems():
+    for _e, _p in _input.iteritems():
       
-      _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-      _scale_factors[_eta_bin] = {}
+      _etabin = _e.split(':')[1][1:-1]
+      _scale_factors[_etabin] = {}
 
-      for _ptb, _sf in _ptbins.iteritems():
+      for _pp, _sf in _p.iteritems():
 
-        _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-        _scale_factors[_eta_bin][_pt_bin] = _sf
+        _ptbin = _pp.split(':')[1][1:-1]
+        _scale_factors[_etabin][_ptbin] = _sf['value']
+
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _e, _p in _scale_factors.iteritems():
+
+      _scale_factors[_e]['overflow'] = None
+
+      for _pp, _sf in _p.iteritems():
+
+        if _pp == 'overflow':
+          continue
+
+        _ptbin = float(_pp.split(',')[1])
+
+        if _ptbin > _max_pt_bin_value:
+          _max_pt_bin = _pp
+          _max_pt_bin_value = _ptbin
+
+      _scale_factors[_e]['overflow'] = _scale_factors[_e][_max_pt_bin]
 
     # Create C function and save it
     _code = self._scale_factor_electron_ID_C_writer(_scale_factors)
@@ -624,23 +791,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 11)\n    return 1;\n\n' 
 
-    # Loop over all sf
-    for _etab, _ptbins in scale_factors.iteritems():
-      
+    # Loop over all eta bins
+    for _e, _p in scale_factors.iteritems():
+    
       # Add eta if statement
-      _eta_min, _eta_max = _etab.split(',')
+      _eta_min, _eta_max = _e.split(',')
       _code += '  if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
       _code += '  {\n' # opening bracket
 
       # Add pt if statements
-      for _ptb, _sf in _ptbins.iteritems():
+      for _pp, _sf in _p.iteritems():
 
-        _pt_min, _pt_max = _ptb.split(',')
+        if _pp == 'overflow':
+          continue
+
+        _pt_min, _pt_max = _pp.split(',')
         _code += '    if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-        _code += '      return {0};\n'.format(_sf['value'])
+        _code += '      return {0};\n'.format(_sf)
 
-      # case if pt > max pt and closing bracket for eta if statement
-      _code += '    else\n      return 1;\n  }\n'
+      # Add overflow bin
+      _code += '    else\n' 
+      _code += '      return {0};\n'.format(_p['overflow'])
+
+      # closing bracket for eta if statement
+      _code += '  }\n'      
 
     # if eta not in any bin then return 0
     _code += '  else\n    return 1; \n}'
@@ -667,15 +841,36 @@ class WeightTool(object):
     # Get scale factors for all eta pt bins
     _scale_factors = {}
 
-    for _etab, _ptbins in _input.iteritems():
+    for _e, _p in _input.iteritems():
       
-      _eta_bin = _etab.split('[', 1)[1].split(']')[0]
-      _scale_factors[_eta_bin] = {}
+      _etabin = _e.split(':')[1][1:-1]
+      _scale_factors[_etabin] = {}
 
-      for _ptb, _sf in _ptbins.iteritems():
+      for _pp, _sf in _p.iteritems():
 
-        _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-        _scale_factors[_eta_bin][_pt_bin] = _sf
+        _ptbin = _pp.split(':')[1][1:-1]
+        _scale_factors[_etabin][_ptbin] = _sf['value']
+
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _e, _p in _scale_factors.iteritems():
+
+      _scale_factors[_e]['overflow'] = None
+
+      for _pp, _sf in _p.iteritems():
+
+        if _pp == 'overflow':
+          continue
+
+        _ptbin = float(_pp.split(',')[1])
+
+        if _ptbin > _max_pt_bin_value:
+          _max_pt_bin = _pp
+          _max_pt_bin_value = _ptbin
+
+      _scale_factors[_e]['overflow'] = _scale_factors[_e][_max_pt_bin]
 
     # Create C function and save it
     _code = self._scale_factor_electron_trk_C_writer(_scale_factors)
@@ -690,23 +885,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 11)\n    return 1;\n\n' 
 
-    # Loop over all sf
-    for _etab, _ptbins in scale_factors.iteritems():
-      
+    # Loop over all eta bins
+    for _e, _p in scale_factors.iteritems():
+    
       # Add eta if statement
-      _eta_min, _eta_max = _etab.split(',')
+      _eta_min, _eta_max = _e.split(',')
       _code += '  if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
       _code += '  {\n' # opening bracket
 
       # Add pt if statements
-      for _ptb, _sf in _ptbins.iteritems():
+      for _pp, _sf in _p.iteritems():
 
-        _pt_min, _pt_max = _ptb.split(',')
+        if _pp == 'overflow':
+          continue
+
+        _pt_min, _pt_max = _pp.split(',')
         _code += '    if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-        _code += '      return {0};\n'.format(_sf['value'])
+        _code += '      return {0};\n'.format(_sf)
 
-      # case if pt > max pt and closing bracket for eta if statement
-      _code += '    else\n      return 1;\n  }\n'
+      # Add overflow bin
+      _code += '    else\n' 
+      _code += '      return {0};\n'.format(_p['overflow'])
+
+      # closing bracket for eta if statement
+      _code += '  }\n'      
 
     # if eta not in any bin then return 0
     _code += '  else\n    return 1; \n}'
@@ -734,16 +936,36 @@ class WeightTool(object):
     # Get scale factors for all eta pt bins
     _scale_factors = {}
 
-    for _etab, _ptbins in _input.iteritems():
+    for _e, _p in _input.iteritems():
       
-      _eta_bin = _etab.split('[', 1)[1].split(']')[0]
+      _etabin = _e.split(':')[1][1:-1]
+      _scale_factors[_etabin] = {}
 
-      _scale_factors[_eta_bin] = {}
+      for _pp, _sf in _p.iteritems():
 
-      for _ptb, _sf in _ptbins.iteritems():
+        _ptbin = _pp.split(':')[1][1:-1]
+        _scale_factors[_etabin][_ptbin] = _sf['value']
 
-        _pt_bin = _ptb.split('[', 1)[1].split(']')[0]
-        _scale_factors[_eta_bin][_pt_bin] = _sf
+    # Add overflow pt bin 
+    _max_pt_bin_value = 0
+    _max_pt_bin       = None
+
+    for _e, _p in _scale_factors.iteritems():
+
+      _scale_factors[_e]['overflow'] = None
+
+      for _pp, _sf in _p.iteritems():
+
+        if _pp == 'overflow':
+          continue
+
+        _ptbin = float(_pp.split(',')[1])
+
+        if _ptbin > _max_pt_bin_value:
+          _max_pt_bin = _pp
+          _max_pt_bin_value = _ptbin
+
+      _scale_factors[_e]['overflow'] = _scale_factors[_e][_max_pt_bin]
 
     # Create C function and save it
     _code = self._scale_factor_electron_trigger_C_writer(_scale_factors)
@@ -759,23 +981,30 @@ class WeightTool(object):
     # Add lepton type check
     _code += '  if (abs(lepton_pdgID) != 11)\n    return 1;\n\n' 
 
-    # Loop over all sf
-    for _etab, _ptbins in scale_factors.iteritems():
-      
+    # Loop over all eta bins
+    for _e, _p in scale_factors.iteritems():
+    
       # Add eta if statement
-      _eta_min, _eta_max = _etab.split(',')
+      _eta_min, _eta_max = _e.split(',')
       _code += '  if (eta > {0} && eta < {1})\n'.format(_eta_min, _eta_max)
       _code += '  {\n' # opening bracket
 
       # Add pt if statements
-      for _ptb, _sf in _ptbins.iteritems():
+      for _pp, _sf in _p.iteritems():
 
-        _pt_min, _pt_max = _ptb.split(',')
+        if _pp == 'overflow':
+          continue
+
+        _pt_min, _pt_max = _pp.split(',')
         _code += '    if (pt > {0} && pt < {1})\n'.format(_pt_min, _pt_max)
-        _code += '      return {0};\n'.format(_sf['value'])
+        _code += '      return {0};\n'.format(_sf)
 
-      # case if pt > max pt and closing bracket for eta if statement
-      _code += '    else\n      return 1;\n  }\n'
+      # Add overflow bin
+      _code += '    else\n' 
+      _code += '      return {0};\n'.format(_p['overflow'])
+
+      # closing bracket for eta if statement
+      _code += '  }\n'      
 
     # if eta not in any bin then return 0
     _code += '  else\n    return 1; \n}'
@@ -811,7 +1040,72 @@ class WeightTool(object):
     _code += '    return {0};\n'.format(0.92)
     _code += '  }\n' # closing bracket
 
-    _code += '  else\n      return 1;\n  }\n'
+    _code += '  else\n    return {0};\n'.format(0.92)
+    _code += '  }\n'
+
+    return _code
+
+  # ----------------- bb misTag ---------------------
+  def scale_factor_bbmistag_handler(self):
+
+    # Create C function and save it
+    _code = self._scale_factor_bbmistag_C_writer()
+    self._save_C_code(self.weights['scale_factor_bb_mistag']['C'], _code)
+
+  def _scale_factor_bbmistag_C_writer(self):
+
+    # function name
+    _code = 'double scale_factor_bb_mistag()\n{\n'
+
+    _code += '  if (pt > {0} && pt < {1})\n'.format( '250', '350')
+    _code += '  {\n' # opening bracket
+    _code += '    return {0};\n'.format(1.050)
+    _code += '  }\n' # closing bracket
+
+    _code += '  if (pt > {0} && pt < {1})\n'.format( '350', '750')
+    _code += '  {\n' # opening bracket
+    _code += '    return {0};\n'.format(1.086)
+    _code += '  }\n' # closing bracket
+
+    _code += '  else\n    return {0};\n'.format(1.086)
+    _code += '  }\n'
+
+    return _code
+
+  # ----------------- tau2/tau1 ---------------------
+  def scale_factor_tau21_handler(self):
+
+    # Create C function and save it
+    _code = self._scale_factor_tau21_C_writer()
+    self._save_C_code(self.weights['scale_factor_tau21']['C'], _code)
+
+  def _scale_factor_tau21_C_writer(self):
+
+    _code = 'double scale_factor_tau21()\n{\n'
+
+    _code += '  return {0};\n'.format('1.10')
+    _code += '}\n'
+
+    return _code
+
+  def scale_factor_tau21_pt_handler(self):
+
+    # Create C function and save it
+    _code = self._scale_factor_tau21_pt_C_writer()
+    self._save_C_code(self.weights['scale_factor_tau21_pt']['C'], _code)
+
+  def _scale_factor_tau21_pt_C_writer(self):
+    
+    MiscTool.Print('python_info', '\nCalled scale_factor_tau21_C_writer function.')
+
+    _code = '#include <math.h>\n'
+    # _code += '#include <stdio.h>\n\n'
+
+    _code += 'double scale_factor_tau21_pt( double pt_t)\n{\n'
+    # _code += 'cout << exp(pt_t) << endl;\n'
+    _code += '    ' +  'return 1.03*log(pt_t/200)' + ';'
+
+    _code += '\n}'
 
     return _code
 
@@ -906,5 +1200,5 @@ class WeightTool(object):
     ROOT.gROOT.ProcessLine('.L {0}/scale_factor_electron.h'.format(self.path_results))
     print ROOT.scale_factor_electron(2.0, 123.5)
 
-    ROOT.gROOT.ProcessLine('.L {0}/EWK_NLO_correction.h'.format(self.path_results))
-    print ROOT.ptWeightEWK( 1, 200, 2, 24)
+    ROOT.gROOT.ProcessLine('.L {0}/scale_factor_ptWeightEWK.h'.format(self.path_results))
+    print ROOT.scale_factor_ptWeightEWK( 1, 200, 2, 24)

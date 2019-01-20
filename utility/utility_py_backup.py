@@ -596,6 +596,25 @@ def aux_bctag_veto_weight(tree, global_variables, aux_files, flavour_type=None, 
     # compute weight
     total_weight *= 1.0*p_data/p_mc
 
+    values = [
+      str(sys_type), 
+      flavour_type,
+      '{:06.4f}'.format(_j),
+      '{:06.4f}'.format(_jet_flavour),
+      '{:06.4f}'.format(tree.Jet_pt[_j]),
+      '{:06.4f}'.format(tree.Jet_eta[_j]),
+      '{:06.4f}'.format(total_weight),
+      '{:06.4f}'.format(SF),
+      '{:06.4f}'.format(efficiency),
+      '{:06.4f}'.format(1.0*p_data/p_mc),
+      systematic,
+      str(eval(selection))
+    ]
+
+    x = '{:12s}'*len(values)
+    # print values
+    print x.format(*values)
+
   return total_weight
 
 def aux_HC_AK08JER_sigma_mass(tree, global_variables):

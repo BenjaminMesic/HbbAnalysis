@@ -4,11 +4,15 @@
 # ----------------------------------------
 
 task = {
-  'test'        : ['all'], #['WplusHPOWPYT', 'WminusHPOWPYT'], # ['TT'], #
-  'Wen_full'    : ['all'],
-  'Wmn_full'    : ['all'],
-  'Wen_110_140' : ['all'],
-  'Wmn_110_140' : ['all'],
+  'test'        : ['WplusHPOWPYT', 'WminusHPOWPYT', 'TT', 'WZ', 'WW', 'ZZ', 'WJet100', 'WJet250', 'WJet400', 'WJet600', 'TT', 'TtW', 'TbartW', 'TbarToLeptonst', 'TToLeptonst'],
+  'Wen_SR'      : ['all'], #['WplusHPOWPYT', 'WminusHPOWPYT', 'TT', 'WZ', 'WW', 'ZZ', 'WJet100', 'WJet250', 'WJet400', 'WJet600', 'TT', 'TtW', 'TbartW', 'TbarToLeptonst', 'TToLeptonst'], # ['all'], #
+  'Wmn_SR'      : ['all'], #['WplusHPOWPYT', 'WminusHPOWPYT', 'TT', 'WZ', 'WW', 'ZZ', 'WJet100', 'WJet250', 'WJet400', 'WJet600', 'TT', 'TtW', 'TbartW', 'TbarToLeptonst', 'TToLeptonst'], # ['all'], #
+  'Wen_CR_TT'   : ['all'], # ['SE', 'SM', 'WplusHPOWPYT', 'WminusHPOWPYT', 'TT'], #
+  'Wmn_CR_TT'   : ['all'],
+  'Wen_CR_HF'   : ['all'],
+  'Wmn_CR_HF'   : ['all'],
+  'Wen_CR_LF'   : ['all'],
+  'Wmn_CR_LF'   : ['all'],
 }
 
 # ---------------------------------------
@@ -19,21 +23,21 @@ task = {
 
 samples_list = {
   # ------------------------- Data --------------------------------
-  # 'SingleElectron':{ # ***
-  #   'ID'  : 'SE',
-  #   'sub' : ['SE_el'],
-  #   'types' : 'data',
-  #   'xsec'  : 1.0,
-  #   'origin': ['all']
-  # },
-  # 'SingleMuon':{ # ***
-  #   'ID'  : 'SM',
-  #   'sub' : ['SM_mu'],
-  #   'types' : 'data',
-  #   'xsec'  : 1.0,
-  #   'origin': ['all']
-  # },
-  # ------------------------- Signal -------------------------------
+  'SingleElectron':{ # ***
+    'ID'  : 'SE',
+    'sub' : ['SE_el'],
+    'types' : 'data',
+    'xsec'  : 1.0,
+    'origin': ['all']
+  },
+  'SingleMuon':{ # ***
+    'ID'  : 'SM',
+    'sub' : ['SM_mu'],
+    'types' : 'data',
+    'xsec'  : 1.0,
+    'origin': ['all']
+  },
+  # # ------------------------- Signal -------------------------------
   # 'WH_HToBB_WToLNu_M125_13TeV_amcatnloFXFX_madspin_pythia8':{
   #   'ID'  : 'WH',
   #   'types' : 'mc',
@@ -43,22 +47,22 @@ samples_list = {
   'WminusH_HToBB_WToLNu_M125_13TeV_powheg_pythia8':{ # ***
     'ID'  : 'WminusHPOWPYT',
     'types' : 'mc',
-    'xsec'  : 0.533 * 0.108535 * 0.5824*3.,
+    'xsec'  : 0.533 * 0.108535 * 0.5824*3*0.926, # 0.926 for SF
     'origin': ['all']
   },
   'WplusH_HToBB_WToLNu_M125_13TeV_powheg_pythia8':{ # ***
     'ID'  : 'WplusHPOWPYT',
     'types' : 'mc',
-    'xsec'  : 0.840 * 0.108535 * 0.5824*3,
+    'xsec'  : 0.840 * 0.108535 * 0.5824*3*0.927, # 0.927 for SF
     'origin': ['all']
   },
   # ------------------------- Others -----------------------------
-  'ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8':{
-    'ID'  : 'ZH',
-    'types' : 'mc',
-    'xsec'  : 0.0535,
-    'origin': ['all']
-  },
+  # 'ZH_HToBB_ZToLL_M125_13TeV_powheg_pythia8':{
+  #   'ID'  : 'ZH',
+  #   'types' : 'mc',
+  #   'xsec'  : 0.0535,
+  #   'origin': ['all']
+  # },
   'WZ_TuneCUETP8M1_13TeV-pythia8':{
     'ID'    : 'WZ',
     'types' : 'mc',
@@ -73,7 +77,7 @@ samples_list = {
   'WW_TuneCUETP8M1_13TeV-pythia8':{
     'ID'    : 'WW',
     'types' : 'mc',
-    'xsec'  : 113.898,
+    'xsec'  : 118.7, #113.898, Changed on Aug 14, 2018
     'origin': ['all']
   },
   # 'WWTo1L1Nu2Q_13TeV_amcatnloFXFX_madspin_pythia8':{
@@ -122,6 +126,8 @@ samples_list = {
   #   'origin': ['all']
   # },
   'WJetsToLNu_Pt-100To250_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8': {
+    # cmsRun ana.py inputFiles="root://cmsxrootd.fnal.gov///store/mc/RunIISummer16MiniAODv2/WJetsToLNu_Pt-100To250_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext4-v1/90000/FEEA4295-3EE0-E611-8737-E41D2D08E110.root"
+    # After filter: final cross section = 6.276e+02 +- 3.858e+00 pb 
     'ID'  : 'WJet100',
     'sub' : ['WJet100_light', 'WJet100_c', 'WJet100_1b', 'WJet100_2b'],
     'types' : 'mc',
@@ -129,6 +135,8 @@ samples_list = {
     'origin': ['all']
   },
   'WJetsToLNu_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8': {
+    # cmsRun ana.py inputFiles="root://cmsxrootd.fnal.gov///store/mc/RunIISummer16MiniAODv2/WJetsToLNu_Pt-250To400_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext4-v1/80000/020450F2-20E0-E611-B7AF-FA163E11F979.root"
+    # After filter: final cross section = 2.281e+01 +- 1.893e-01 pb
     'ID'  : 'WJet250',
     'sub' : ['WJet250_light', 'WJet250_c', 'WJet250_1b', 'WJet250_2b'],
     'types' : 'mc',
@@ -136,6 +144,8 @@ samples_list = {
     'origin': ['all']
   },
   'WJetsToLNu_Pt-400To600_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8': {
+    # cmsRun ana.py inputFiles="root://cmsxrootd.fnal.gov///store/mc/RunIISummer16MiniAODv2/WJetsToLNu_Pt-400To600_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/0489A527-10D0-E611-82BA-1418774121A1.root"
+    # After filter: final cross section = 2.648e+00 +- 1.861e-02 pb
     'ID'    : 'WJet400',
     'sub'   : ['WJet400_light', 'WJet400_c', 'WJet400_1b', 'WJet400_2b'],
     'types' : 'mc',
@@ -143,6 +153,8 @@ samples_list = {
     'origin': ['all']
   },
   'WJetsToLNu_Pt-600ToInf_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8': {
+    # cmsRun ana.py inputFiles="root://cmsxrootd.fnal.gov///store/mc/RunIISummer16MiniAODv2/WJetsToLNu_Pt-600ToInf_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/100000/FE8B12A7-89D1-E611-900A-90B11C0BB9CF.root"
+    # After filter: final cross section = 4.021e-01 +- 3.245e-03 pb
     'ID'    : 'WJet600',
     'sub'   : ['WJet600_light', 'WJet600_c', 'WJet600_1b', 'WJet600_2b'],
     'types' : 'mc',
@@ -183,7 +195,7 @@ samples_list = {
     'ID'    : 'TT',
     # 'sub'   : ['TT_TTincl'],
     'types' : 'mc',
-    'xsec'  : 831.76,
+    'xsec'  : 831.76*0.89, # After filter: final cross section = 7.306e+02 +- 5.572e-01 pb cmsRun ana.py inputFiles="file:/eos/cms/store/mc/RunIISummer16MiniAODv2/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/80000/3A627B5E-9CBE-E611-9A67-FA163EDD4BD9.root"
     'origin': ['all']   
   },
   # 'TT_Mtt-1000toInf_TuneCUETP8M2T4_13TeV-powheg-pythia8':{ 
@@ -214,13 +226,13 @@ samples_list = {
   'ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1':{
     'ID'    : 'TbarToLeptonst',
     'types' : 'mc',
-    'xsec'  : 80.95,
+    'xsec'  : 80.95*.325, 
     'origin': ['all']
   },
   'ST_t-channel_top_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1':{
     'ID'    : 'TToLeptonst',
     'types' : 'mc',
-    'xsec'  : 136.02,
+    'xsec'  : 136.02*.325,
     'origin': ['all']
   },
   # 'ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1':{

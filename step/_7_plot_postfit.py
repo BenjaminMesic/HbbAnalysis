@@ -1,8 +1,8 @@
-from utility import MiscTool, DataCardTool, SampleTool
+from utility import MiscTool, PlotTool
 
 if __name__ == '__main__':
 
-  MiscTool.Print('python_info',  '\nStep 6: Make datacards.')
+  MiscTool.Print('python_info',  '\nStep 7: Postfit plot.')
 
   # Get analysis name, default is 'Wlv'
   analysis_name = MiscTool.get_analysis_name()
@@ -11,7 +11,6 @@ if __name__ == '__main__':
   configuration = MiscTool.get_configuration_files(analysis_name)
 
   # ----------- Here starts task ----------------
-  d = DataCardTool.DataCardTool( configuration)
+  p = PlotTool.PlotPostfitTool(configuration)
 
-  d.get_yields_and_templates()
-  d.make_datacards_and_templates()
+  p.plot()

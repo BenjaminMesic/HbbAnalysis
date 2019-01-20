@@ -15,5 +15,5 @@ if __name__ == '__main__':
 
   # ----------------------------------------
 
-  # # Create user defined files, add variables, etc ...
-  # prepare_files.make_files_all_samples()
+  # Create user defined files, add variables, etc ...
+  prepare_files.make_files_all_samples()
